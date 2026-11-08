@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import CatalogoView from './components/catalogo/CatalogoView';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -101,11 +102,7 @@ export default function App() {
             </div>
           )}
 
-          {activeTab === 'catalog' && (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <p className="text-gray-600">Aquí se listarán las dependencias, servicios y sus códigos QR generados correspondientes a la HU01.</p>
-            </div>
-          )}
+          {activeTab === 'catalog' && <CatalogoView />}
 
           {activeTab === 'improvements' && (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
