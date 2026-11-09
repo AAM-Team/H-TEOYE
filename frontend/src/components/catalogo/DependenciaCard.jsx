@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 // Tarjeta con una dependencia, la lista de sus servicios
-// y un formulario corto para agregarle más servicios.
+// y el código QR único descargable por cada servicio (HU01).
 export default function DependenciaCard({
   dependencia,
   onAgregarServicio,
@@ -58,19 +58,50 @@ export default function DependenciaCard({
       </header>
 
       <ul className="divide-y divide-gray-100">
-        {dependencia.servicios.map((servicio) => (
-          <li key={servicio.id} className="flex items-center justify-between gap-4 px-5 py-3">
-            <p className="min-w-0 text-sm font-medium text-gray-800">{servicio.nombre}</p>
-            <button
-              type="button"
-              onClick={() => confirmarEliminarServicio(servicio)}
-              aria-label={`Eliminar servicio ${servicio.nombre}`}
-              className="shrink-0 rounded-md px-2 py-1 text-gray-400 hover:bg-red-50 hover:text-red-600"
-            >
-              ✕
-            </button>
-          </li>
-        ))}
+        {dependencia.servicios.map((servicio) => {
+          // URL de evaluación única para este servicio asociada al QR
+          const urlEvaluacion = `${window.location.origin}/evaluar/${dependencia.id}/${servicio.id}`;
+          // URL del código QR generado dinámicamente mediante API pública estándar
+          const urlQrApi = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlEvaluacion)}`;
+
+          return (
+            <li key={servicio.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 flex-1 pr-2">
+                <p className="text-sm font-medium text-gray-800">{servicio.nombre}</p>
+                <p className="mt-0.5 text-xs text-gray-400 truncate">URL: {urlEvaluacion}</p>
+              </div>
+
+              <div className="flex items-center gap-3 self-end sm:self-center">
+                {/* Contenedor del Código QR y su enlace de descarga */}
+                <div className="flex flex-col items-center bg-white p-1.5 border border-gray-200 rounded-lg shadow-2xs">
+                  <img 
+                    src={urlQrApi} 
+                    alt={`QR para el servicio ${servicio.nombre}`} 
+                    className="w-16 h-16 object-contain"
+                  />
+                  <a
+                    href={urlQrApi}
+                    download={`QR-${dependencia.nombre}-${servicio.nombre}.png`.replace(/\s+/g, '_')}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 text-[10px] font-medium text-blue-600 hover:underline"
+                  >
+                    Descargar QR
+                  </a>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => confirmarEliminarServicio(servicio)}
+                  aria-label={`Eliminar servicio ${servicio.nombre}`}
+                  className="shrink-0 rounded-md p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 self-center"
+                >
+                  ✕
+                </button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
 
       <form onSubmit={agregar} className="border-t border-gray-100 px-5 py-3">
