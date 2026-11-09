@@ -1,180 +1,137 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
-// Formulario en ventana modal para dar de alta una dependencia
-// junto con uno o más servicios (criterio de aceptación de la HU01).
-export default function DependenciaForm({ onGuardar, onCancelar }) {
-  const [nombre, setNombre] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [servicios, setServicios] = useState(['']);
+// Tarjeta con una dependencia, la lista de sus servicios
+// y el código QR único descargable por cada servicio (HU01).
+export default function DependenciaCard({
+  dependencia,
+  onAgregarServicio,
+  onEliminarServicio,
+  onEliminarDependencia,
+}) {
+  const [nuevoServicio, setNuevoServicio] = useState('');
   const [error, setError] = useState('');
   const [guardando, setGuardando] = useState(false);
-  const primerCampo = useRef(null);
 
-  useEffect(() => {
-    primerCampo.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    const cerrarConEscape = (e) => {
-      if (e.key === 'Escape') onCancelar();
-    };
-    window.addEventListener('keydown', cerrarConEscape);
-    return () => window.removeEventListener('keydown', cerrarConEscape);
-  }, [onCancelar]);
-
-  const conLimpieza = (setter) => (valor) => {
-    if (error) setError('');
-    setter(valor);
-  };
-  const cambiarNombre = conLimpieza(setNombre);
-  const cambiarDescripcion = conLimpieza(setDescripcion);
-
-  const cambiarServicio = (indice, valor) => {
-    if (error) setError('');
-    setServicios((actuales) => actuales.map((s, i) => (i === indice ? valor : s)));
-  };
-
-  const agregarCampoServicio = () => setServicios((actuales) => [...actuales, '']);
-
-  const quitarCampoServicio = (indice) => {
-    setServicios((actuales) => actuales.filter((_, i) => i !== indice));
-  };
-
-  const enviar = async (e) => {
+  const agregar = async (e) => {
     e.preventDefault();
     setError('');
     setGuardando(true);
     try {
-      await onGuardar({ nombre, descripcion, servicios });
+      await onAgregarServicio(dependencia.id, nuevoServicio);
+      setNuevoServicio('');
     } catch (err) {
       setError(err.message);
+    } finally {
       setGuardando(false);
     }
   };
 
-  const inputClase =
-    'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100';
+  const confirmarEliminarDependencia = () => {
+    const mensaje = `¿Eliminar "${dependencia.nombre}" y sus ${dependencia.servicios.length} servicio(s)? Esta acción no se puede deshacer.`;
+    if (window.confirm(mensaje)) onEliminarDependencia(dependencia.id);
+  };
+
+  const confirmarEliminarServicio = (servicio) => {
+    if (dependencia.servicios.length === 1) {
+      window.alert('Una dependencia debe tener al menos un servicio. Agrega otro antes de eliminar este.');
+      return;
+    }
+    if (window.confirm(`¿Eliminar el servicio "${servicio.nombre}"?`)) {
+      onEliminarServicio(dependencia.id, servicio.id);
+    }
+  };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
-      onMouseDown={(e) => e.target === e.currentTarget && onCancelar()}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="titulo-form-dependencia"
-        className="w-full max-w-lg rounded-2xl bg-white shadow-xl"
-      >
-        <form onSubmit={enviar}>
-          <div className="border-b border-gray-200 px-6 py-4">
-            <h3 id="titulo-form-dependencia" className="text-lg font-semibold text-gray-900">
-              Nueva dependencia
-            </h3>
-            <p className="mt-0.5 text-sm text-gray-500">
-              Registra la dependencia y los servicios que ofrece a la ciudadanía.
-            </p>
-          </div>
+    <article className="rounded-xl border border-gray-200 bg-white shadow-sm">
+      <header className="flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-4">
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold text-gray-900">{dependencia.nombre}</h3>
+          <p className="mt-0.5 text-sm text-gray-500">{dependencia.descripcion}</p>
+        </div>
+        <button
+          type="button"
+          onClick={confirmarEliminarDependencia}
+          className="shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:bg-red-50 hover:text-red-600"
+        >
+          Eliminar
+        </button>
+      </header>
 
-          <div className="max-h-[60vh] space-y-5 overflow-y-auto px-6 py-5">
-            <div>
-              <label htmlFor="dep-nombre" className="mb-1 block text-sm font-medium text-gray-700">
-                Nombre <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="dep-nombre"
-                ref={primerCampo}
-                type="text"
-                maxLength={120}
-                value={nombre}
-                onChange={(e) => cambiarNombre(e.target.value)}
-                placeholder="Ej. Tesorería Municipal"
-                className={inputClase}
-              />
-            </div>
+      <ul className="divide-y divide-gray-100">
+        {dependencia.servicios.map((servicio) => {
+          // URL de evaluación única para este servicio asociada al QR
+          const urlEvaluacion = `${window.location.origin}/evaluar/${dependencia.id}/${servicio.id}`;
+          // URL del código QR generado dinámicamente mediante API pública estándar
+          const urlQrApi = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlEvaluacion)}`;
 
-            <div>
-              <label htmlFor="dep-descripcion" className="mb-1 block text-sm font-medium text-gray-700">
-                Descripción <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                id="dep-descripcion"
-                rows={3}
-                maxLength={300}
-                value={descripcion}
-                onChange={(e) => cambiarDescripcion(e.target.value)}
-                placeholder="¿Qué atiende esta dependencia?"
-                className={`${inputClase} resize-none`}
-              />
-              <p className="mt-1 text-right text-xs text-gray-400">{descripcion.length}/300</p>
-            </div>
-
-            <fieldset>
-              <legend className="mb-1 text-sm font-medium text-gray-700">
-                Servicios <span className="text-red-500">*</span>
-              </legend>
-              <p className="mb-2 text-xs text-gray-500">
-                Agrega al menos un servicio que ofrezca esta dependencia.
-              </p>
-              <div className="space-y-2">
-                {servicios.map((servicio, i) => (
-                  <div key={i} className="flex gap-2">
-                    <input
-                      type="text"
-                      aria-label={`Servicio ${i + 1}`}
-                      maxLength={120}
-                      value={servicio}
-                      onChange={(e) => cambiarServicio(i, e.target.value)}
-                      placeholder={i === 0 ? 'Ej. Pago de impuesto predial' : 'Otro servicio'}
-                      className={inputClase}
-                    />
-                    {servicios.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => quitarCampoServicio(i)}
-                        aria-label={`Quitar servicio ${i + 1}`}
-                        className="shrink-0 rounded-lg border border-gray-300 px-3 text-gray-500 hover:bg-gray-50 hover:text-red-600"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ))}
+          return (
+            <li key={servicio.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 flex-1 pr-2">
+                <p className="text-sm font-medium text-gray-800">{servicio.nombre}</p>
+                <p className="mt-0.5 text-xs text-gray-400 truncate">URL: {urlEvaluacion}</p>
               </div>
-              <button
-                type="button"
-                onClick={agregarCampoServicio}
-                className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700"
-              >
-                + Agregar otro servicio
-              </button>
-            </fieldset>
 
-            {error && (
-              <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                {error}
-              </p>
-            )}
-          </div>
+              <div className="flex items-center gap-3 self-end sm:self-center">
+                {/* Contenedor del Código QR y su enlace de descarga */}
+                <div className="flex flex-col items-center bg-white p-1.5 border border-gray-200 rounded-lg shadow-2xs">
+                  <img
+                    src={urlQrApi}
+                    alt={`QR para el servicio ${servicio.nombre}`}
+                    className="w-16 h-16 object-contain"
+                  />
+                  <a
+                    href={urlQrApi}
+                    download={`QR-${dependencia.nombre}-${servicio.nombre}.png`.replace(/\s+/g, '_')}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-1 text-[10px] font-medium text-blue-600 hover:underline"
+                  >
+                    Descargar QR
+                  </a>
+                </div>
 
-          <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
-            <button
-              type="button"
-              onClick={onCancelar}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={guardando}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {guardando ? 'Guardando…' : 'Guardar dependencia'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+                <button
+                  type="button"
+                  onClick={() => confirmarEliminarServicio(servicio)}
+                  aria-label={`Eliminar servicio ${servicio.nombre}`}
+                  className="shrink-0 rounded-md p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 self-center"
+                >
+                  ✕
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      <form onSubmit={agregar} className="border-t border-gray-100 px-5 py-3">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            maxLength={120}
+            value={nuevoServicio}
+            onChange={(e) => {
+              setNuevoServicio(e.target.value);
+              if (error) setError('');
+            }}
+            aria-label={`Nuevo servicio para ${dependencia.nombre}`}
+            placeholder="Agregar un servicio…"
+            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+          />
+          <button
+            type="submit"
+            disabled={guardando || !nuevoServicio.trim()}
+            className="shrink-0 rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Agregar
+          </button>
+        </div>
+        {error && (
+          <p role="alert" className="mt-2 text-xs text-red-600">
+            {error}
+          </p>
+        )}
+      </form>
+    </article>
   );
 }
