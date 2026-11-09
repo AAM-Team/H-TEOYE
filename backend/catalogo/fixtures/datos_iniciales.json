@@ -1,0 +1,10 @@
+[
+  {"model": "catalogo.dependencia", "pk": 1, "fields": {"nombre": "Tesorería Municipal", "descripcion": "Recaudación de impuestos y pagos municipales.", "creado_en": "2026-11-01T10:00:00Z"}},
+  {"model": "catalogo.dependencia", "pk": 2, "fields": {"nombre": "Desarrollo Urbano y Ecología", "descripcion": "Licencias de construcción, uso de suelo y trámites urbanos.", "creado_en": "2026-11-01T10:00:00Z"}},
+  {"model": "catalogo.dependencia", "pk": 3, "fields": {"nombre": "Servicios Públicos", "descripcion": "Recolección de basura, alumbrado y mantenimiento urbano.", "creado_en": "2026-11-01T10:00:00Z"}},
+  {"model": "catalogo.servicio", "pk": 1, "fields": {"dependencia": 1, "nombre": "Pago de impuesto predial", "creado_en": "2026-11-01T10:00:00Z"}},
+  {"model": "catalogo.servicio", "pk": 2, "fields": {"dependencia": 1, "nombre": "Constancia de no adeudo", "creado_en": "2026-11-01T10:00:00Z"}},
+  {"model": "catalogo.servicio", "pk": 3, "fields": {"dependencia": 2, "nombre": "Licencia de construcción", "creado_en": "2026-11-01T10:00:00Z"}},
+  {"model": "catalogo.servicio", "pk": 4, "fields": {"dependencia": 3, "nombre": "Reporte de alumbrado público", "creado_en": "2026-11-01T10:00:00Z"}},
+  {"model": "catalogo.servicio", "pk": 5, "fields": {"dependencia": 3, "nombre": "Recolección de residuos voluminosos", "creado_en": "2026-11-01T10:00:00Z"}}
+]
