@@ -1,170 +1,149 @@
-# H-TEOYE
+# H-TEOYE — Tu voz mejora Hermosillo
 
-Sistema de Evaluación Ciudadana
-**H. Ayuntamiento de Hermosillo**  
-*Hackaton: Innovación por la transparencia y la anticorrupción — Reto #2: “Evaluación de la calidad en la atención ciudadana”*
+Prototipo cívico para evaluar la calidad de la atención en trámites municipales de Hermosillo, Sonora.
+Desarrollado para el **Hackathon de Innovación por la Transparencia y Anticorrupción** del Ayuntamiento de
+Hermosillo, reto «Evaluación de la calidad en la atención ciudadana».
 
-## 🏛️ Propósito del Proyecto
+> **Aviso:** H-TEOYE es un prototipo. No es un servicio oficial del Ayuntamiento y las cifras incluyen datos
+> demostrativos ficticios claramente identificados. El logotipo del H. Ayuntamiento de Hermosillo
+> (`public/marca/`, descargado de hermosillo.gob.mx) se muestra con permiso del hackathon que el Ayuntamiento
+> organiza; retíralo si el proyecto se usa fuera de ese contexto.
 
-El Ayuntamiento de Hermosillo no contaba con un mecanismo accesible y sistemático para capturar, analizar y publicar la experiencia de las personas que utilizan sus servicios públicos. Las opiniones ciudadanas quedaban dispersas en redes sociales o quejas verbales sin procesar, impidiendo que las dependencias identificaran con evidencia sus áreas de oportunidad y debilitando la confianza ciudadana.
+## Estado
 
-**H-TEOYE** resuelve este reto cerrando el ciclo completo de la experiencia ciudadana:
-1. **Evaluación Ciudadana Móvil:** Cualquier ciudadano escanea un código QR único en ventanilla y califica su atención en menos de 60 segundos, de manera 100% anónima y sin registros.
-2. **Inteligencia de Datos y PLN:** Procesamiento automático del lenguaje natural en español para detectar sentimiento (positivo, neutro, queja) y clasificar el motivo del reporte (tiempos de espera, trato, requisitos, resolución).
-3. **Panel Administrativo y Filtros:** Tablero institucional interactivo con Chart.js para que enlaces y autoridades analicen tendencias históricas, quejas críticas y volumen de atención.
-4. **Portal Abierto y Compromisos:** Publicación transparente del ranking municipal de calidad y seguimiento auditado de las acciones de mejora asumidas por cada área.
+| Fase | Contenido | Estado |
+|---|---|---|
+| 1 | Base del proyecto, diseño, base de datos, flujo ciudadano completo | ✅ Lista |
+| 2 | Dashboard público con indicadores, filtros y gráficas (CSV pendiente) | ✅ Lista |
+| 3 | Panel institucional: inicio de sesión, roles, consulta de evaluaciones | ✅ Lista |
+| 4 | Acciones de mejora, validación/publicación, moderación, bitácora | ✅ Lista |
+| 5 | Catálogo editable desde el panel, pruebas E2E, accesibilidad, documentación final | Pendiente |
 
+Detalle técnico en [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) y bitácora de fases en
+[`docs/FASES.md`](docs/FASES.md). Contexto y fuentes en [`docs/CONTEXTO.md`](docs/CONTEXTO.md).
 
-## Stack
+## Tecnologías
 
-| Capa | Tecnología |
-|------|------------|
-| Frontend | React 19, Vite, Tailwind CSS 4 |
-| Backend | Django 5.2, Django REST Framework |
-| Base de datos | PostgreSQL 16 |
-| Infraestructura | Docker / Docker Compose |
+Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · shadcn/ui (Radix) · Lucide · Recharts · PostgreSQL ·
+Prisma 6 · Zod 4 · Vitest.
 
-## Estructura del proyecto
+## Cómo ejecutarlo en Windows
 
-```
-H-TEOYE/
-├── backend/             # API Django (config/ + app catalogo/)
-├── frontend/            # SPA React + Vite
-└── docker-compose.yml   # Orquesta db + backend + frontend
-```
+Requisitos: **Node.js 20.9 o superior** (recomendado 22 LTS) y **PostgreSQL 16**, ya sea con
+[Docker Desktop](https://www.docker.com/products/docker-desktop/) o instalado localmente.
 
-## Requisitos previos
+```powershell
+# 1. Entra a la carpeta del proyecto
+cd "C:\Users\DGSSP\Downloads\H- TEOYE"
 
-**Opción recomendada (Docker):**
-- [Docker](https://docs.docker.com/get-docker/) y Docker Compose v2
+# 2. Levanta PostgreSQL (opción Docker). Si instalaste PostgreSQL localmente,
+#    crea un usuario y base "hteoye" con contraseña "hteoye" o ajusta .env
+docker compose up -d
 
-**Opción manual (sin Docker):**
-- Python 3.12+
-- Node.js 22+
-- PostgreSQL 16 en ejecución
+# 3. Variables de entorno
+copy .env.example .env
 
-## Inicio rápido con Docker
-
-```bash
-git clone https://github.com/AAM-Team/H-TEOYE.git
-cd H-TEOYE
-docker compose up --build
-```
-
-Al iniciar, el backend ejecuta las migraciones automáticamente. Servicios disponibles:
-
-| Servicio | URL |
-|----------|-----|
-| Frontend | http://localhost:5173 |
-| API | http://localhost:8000/api/ |
-| Health check | http://localhost:8000/api/health/ |
-| Admin de Django | http://localhost:8000/admin/ |
-
-### Cargar datos iniciales (opcional)
-
-Con los contenedores corriendo, en otra terminal:
-
-```bash
-docker compose exec backend python manage.py loaddata datos_iniciales
-```
-
-### Crear usuario administrador (opcional)
-
-```bash
-docker compose exec backend python manage.py createsuperuser
-```
-
-### Comandos útiles
-
-```bash
-docker compose up -d                 # levantar en segundo plano
-docker compose logs -f backend       # ver logs del backend
-docker compose down                  # detener contenedores
-docker compose down -v               # detener y BORRAR la base de datos
-docker compose exec backend python manage.py test   # correr pruebas
-```
-
-## Ejecución manual (sin Docker)
-
-### Backend
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-
-# Configura la base de datos (ver variables de entorno abajo)
-export POSTGRES_DB=civica POSTGRES_USER=civica POSTGRES_PASSWORD=civica
-export POSTGRES_HOST=localhost POSTGRES_PORT=5432
-
-python manage.py migrate
-python manage.py loaddata datos_iniciales   # opcional
-python manage.py runserver
-```
-
-### Frontend
-
-```bash
-cd frontend
+# 4. Dependencias (también genera el cliente de Prisma)
 npm install
+
+# 5. Crea las tablas y carga el catálogo + datos demostrativos
+npm run db:deploy
+npm run db:seed
+
+# 6. Arranca en modo desarrollo
 npm run dev
 ```
 
-Vite redirige las peticiones `/api` a `http://localhost:8000` (se puede cambiar con la variable `API_URL`).
+Abre <http://localhost:3000>.
 
-Otros scripts: `npm run build`, `npm run preview`, `npm run lint`.
+### PostgreSQL local sin Docker (Windows)
 
-## Variables de entorno
+Si Prisma falla con `ECONNREFUSED` en `localhost:5432`, la base de datos no est? iniciada.
+Como alternativa a Docker, puedes usar PostgreSQL 16 dentro del proyecto:
 
-### Backend
+```powershell
+npm install --prefix .local/postgres-runtime --no-save --package-lock=false @embedded-postgres/windows-x64@16.15.0-beta.19
+npm run db:local
+npm run db:deploy
+npm run db:seed
+npm run dev
+```
 
-| Variable | Descripción | Valor por defecto |
-|----------|-------------|-------------------|
-| `DJANGO_SECRET_KEY` | Llave secreta de Django | valor de desarrollo (**cambiar en producción**) |
-| `DJANGO_DEBUG` | Modo debug | `true` |
-| `ALLOWED_HOSTS` | Hosts permitidos, separados por coma | `localhost,127.0.0.1,backend` |
-| `CORS_ALLOWED_ORIGINS` | Orígenes permitidos, separados por coma | `http://localhost:5173` |
-| `DATABASE_URL` | URL completa de la BD (tiene prioridad) | — |
-| `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | Credenciales de PostgreSQL | `civica` en Docker |
-| `POSTGRES_HOST` / `POSTGRES_PORT` | Host y puerto de PostgreSQL | `db` / `5432` |
+El script usa el usuario, contrase?a, puerto y base de `DATABASE_URL` en `.env`.
+Los datos persisten en `.local/postgres-data` (excluido de Git). Despu?s de reiniciar Windows,
+ejecuta `npm run db:local` antes de `npm run dev`. Para detener la base: `npm run db:local:stop`.
+No ejecutes esta alternativa y Docker en el mismo puerto a la vez.
 
-### Frontend
+### Scripts
 
-| Variable | Descripción |
-|----------|-------------|
-| `API_URL` | URL del backend a la que Vite hace proxy de `/api` (default `http://localhost:8000`) |
-| `VITE_USE_POLLING` | `true` para detectar cambios de archivos dentro de Docker |
+| Script | Qué hace |
+|---|---|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` / `npm start` | Compilación y servidor de producción |
+| `npm run typecheck` | Genera tipos de rutas y revisa TypeScript |
+| `npm run lint` | ESLint |
+| `npm test` | Pruebas unitarias (Vitest) |
+| `npm run db:deploy` | Aplica las migraciones |
+| `npm run db:migrate` | Crea una migración nueva tras cambiar `schema.prisma` |
+| `npm run db:seed` | Carga dependencias, catálogo y datos demo si no existen (idempotente) |
+| `npm run db:catalogo` | Importa `prisma/catalogo/tramites.json` (idempotente, no toca evaluaciones) |
+| `npm run db:studio` | Explorador visual de la base de datos |
 
-> Las credenciales de `docker-compose.yml` son solo para desarrollo local. No las uses en producción.
+## Catálogo de trámites
 
-## API
+El catálogo oficial (25 trámites, 5 por dependencia) está en `prisma/catalogo/tramites.json`, verificado
+contra el [Portal de Trámites y Servicios del Ayuntamiento](https://tramites.hermosillo.gob.mx/). Cada trámite
+tiene un `id` estable, su `nombre` y su `modalidad` oficial (`ventanilla`, `en_linea` o `con_formato`).
 
-Base: `/api/`
+Para aplicar cambios del catálogo a la base de datos:
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `GET` | `/dependencias/` | Lista dependencias con sus servicios |
-| `POST` | `/dependencias/` | Crea una dependencia con sus servicios |
-| `DELETE` | `/dependencias/<id>/` | Elimina una dependencia y sus servicios |
-| `POST` | `/dependencias/<id>/servicios/` | Agrega un servicio a una dependencia |
-| `DELETE` | `/servicios/<id>/` | Elimina un servicio |
-| `GET` | `/health/` | Estado del servicio |
+```powershell
+npm run db:catalogo
+```
 
-**Reglas de negocio:**
-- El nombre de una dependencia es único.
-- No puede haber dos servicios con el mismo nombre dentro de una dependencia.
-- Una dependencia debe conservar al menos un servicio (no se puede eliminar el último).
+El importador:
 
-## Flujo de trabajo del equipo
+- **es idempotente**: si se ejecuta de nuevo sin cambios, no escribe nada;
+- **conserva las evaluaciones**: actualiza cada trámite en su lugar (mismo id interno), nunca borra;
+- empareja por `id` del catálogo; un trámite que desaparece del archivo se **desactiva**, no se elimina;
+- valida que haya 5 trámites por dependencia y que no haya identificadores repetidos;
+- trabaja en una sola transacción y registra los cambios en la bitácora.
 
-1. Crea una rama desde `main` (`feature/...`, `fix/...`).
-2. Haz commits descriptivos (por ejemplo `feat(front): ...`, `fix(back): ...`).
-3. Abre un Pull Request hacia `main` y solicita revisión.
+> El archivo verificado usa el id `ordenamiento-desarrollo-urbano`; el importador lo asocia a la dependencia
+> `ordenamiento-y-desarrollo-urbano` (su URL pública) mediante un alias.
 
-## Problemas comunes
+## Dos portales
 
-- **El backend no conecta a la BD:** verifica que el contenedor `db` esté saludable (`docker compose ps`) o que las variables `POSTGRES_*` sean correctas.
-- **Errores de CORS:** agrega el origen de tu frontend a `CORS_ALLOWED_ORIGINS`.
-- **Puerto ocupado (5173 / 8000):** detén el proceso que lo usa o cambia el puerto en `docker-compose.yml`.
-- **Quiero reiniciar la base de datos:** `docker compose down -v` y vuelve a levantar.
+| Portal | Ruta | Cuenta | Para qué |
+|---|---|---|---|
+| Ciudadano | `/` | No necesita | Evaluar un trámite, ver el ranking y los resultados, consultar las mejoras publicadas |
+| Funcionarios | `/panel` | Sí (`/panel/login`) | Prioridades por trámite, evaluaciones individuales, moderación de comentarios, acciones de mejora y bitácora |
+
+### Cuentas de demostración del panel
+
+`npm run db:seed` crea estas cuentas **sólo si `SEED_PASSWORD` está definida** (la contraseña de prueba está en
+`.env.example`; cópiala a `.env` o pásala al ejecutar el seed). Usan el dominio reservado `.example`.
+
+| Correo | Rol | Alcance |
+|---|---|---|
+| `coordinacion@hteoye.example` | Coordinación general | Todas las dependencias; bitácora |
+| `responsable.agua@hteoye.example` | Responsable | Agua de Hermosillo: modera, valida y publica |
+| `enlace.agua@hteoye.example` | Enlace | Agua de Hermosillo: consulta y registra acciones |
+| `responsable.transito@hteoye.example` | Responsable | Tránsito |
+| `responsable.tesoreria@hteoye.example` | Responsable | Tesorería |
+
+Reglas que el servidor aplica en cada acción: cada rol ve sólo su dependencia, quien registra una acción no puede
+validarla, sólo se publica lo validado y todo queda en la bitácora. **Cambia la contraseña o elimina estas cuentas
+antes de cualquier uso real.**
+
+## Datos demostrativos
+
+`npm run db:seed` crea las dependencias, importa el catálogo y, **sólo si la base no tiene ninguna**,
+genera evaluaciones ficticias con `esDemo = true`, que el sitio identifica con avisos visibles. El seed nunca
+borra evaluaciones, así que puede ejecutarse varias veces. Para no generar datos demo: `SEED_DEMO="false"`.
+
+## Nota para entornos sin acceso a binarios de Prisma
+
+El cliente de Prisma usa el adaptador `@prisma/adapter-pg` (sin motor binario de consultas). Las migraciones
+usan el motor clásico, que Prisma descarga al instalar. Si tu red bloquea `binaries.prisma.sh`, puedes aplicar
+`prisma/migrations/*/migration.sql` directamente con `psql`.

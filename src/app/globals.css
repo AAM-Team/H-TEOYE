@@ -1,0 +1,288 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/public-sans";
+@import "@fontsource-variable/bricolage-grotesque";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Tokens de H-TEOYE — v2.
+ * Dirección: plataforma cívica de datos. Fondo arena cálido, tinta azul-noche, naranja como única
+ * acción, y una escala divergente rojo ↔ gris ↔ azul reservada a las calificaciones (1 → 3 → 5).
+ * Los tonos "-ink" son variantes oscurecidas para texto, con contraste WCAG AA (≥4.5:1) sobre blanco y arena.
+ */
+/*
+ * Tokens de H-TEOYE — v3 «Hermosillo».
+ * Identidad de la ciudad: turquesa como color principal, naranja del logotipo del Ayuntamiento (#EF7900)
+ * como acento cálido (el sol de Sonora), azul pizarra para el texto y un fondo frío y claro.
+ * Los tonos "-ink" son variantes para texto con contraste WCAG AA (≥4.5:1) sobre blanco y sobre el fondo.
+ */
+:root {
+  --brand-orange: #ef7900;
+  --brand-orange-ink: #b14f00;
+  --brand-orange-soft: #fff1e3;
+  --brand-teal: #009a9c;
+  --brand-teal-ink: #00777a;
+  --brand-teal-soft: #e2f4f3;
+  --brand-navy: #1d2f3b;
+  /* Noche del desierto: fondo de las franjas oscuras, un turquesa muy profundo. */
+  --brand-navy-deep: #06262b;
+
+  --radius: 0.875rem;
+  --background: #f3f6f7;
+  --foreground: #1d2f3b;
+  --card: #ffffff;
+  --card-foreground: #1d2f3b;
+  --popover: #ffffff;
+  --popover-foreground: #1d2f3b;
+  --muted: #e9eff1;
+  --muted-foreground: #56656f;
+  --accent: #e2f4f3;
+  --accent-foreground: #1d2f3b;
+  --secondary: #e9eff1;
+  --secondary-foreground: #1d2f3b;
+  --destructive: #c0352b;
+  --border: #dde5e8;
+  --input: #c4cfd4;
+
+  /* Portal ciudadano: turquesa */
+  --primary: var(--brand-teal-ink);
+  --primary-foreground: #ffffff;
+  --primary-ink: var(--brand-teal-ink);
+  --primary-soft: var(--brand-teal-soft);
+  --ring: var(--brand-teal);
+
+  /* Resorte críticamente amortiguado (Apple: damping 1.0): x(t) = 1 − (1 + ωt)·e^(−ωt), ω = 7.5, muestreado con linear(). */
+  --spring: linear(0, 0.0809 6.3%, 0.2413 12.5%, 0.4103 18.8%, 0.5591 25%, 0.6791 31.3%, 0.771 37.5%, 0.8391 43.8%, 0.8883 50%, 0.9232 56.3%, 0.9476 62.5%, 0.9645 68.8%, 0.9761 75%, 0.984 81.3%, 0.9893 87.5%, 0.9929 93.8%, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Tema del panel institucional (turquesa + tinta) */
+.theme-panel {
+  --primary: var(--brand-teal-ink);
+  --primary-foreground: #ffffff;
+  --primary-ink: var(--brand-teal-ink);
+  --primary-soft: var(--brand-teal-soft);
+  --accent: var(--brand-teal-soft);
+  --ring: var(--brand-teal);
+}
+
+@theme inline {
+  --font-sans: "Public Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Public Sans Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-ink: var(--primary-ink);
+  --color-primary-soft: var(--primary-soft);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-orange: var(--brand-orange);
+  --color-orange-ink: var(--brand-orange-ink);
+  --color-orange-soft: var(--brand-orange-soft);
+  --color-teal: var(--brand-teal);
+  --color-teal-ink: var(--brand-teal-ink);
+  --color-teal-soft: var(--brand-teal-soft);
+  --color-navy: var(--brand-navy);
+  --color-navy-deep: var(--brand-navy-deep);
+
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 10px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    scroll-padding-top: 6rem;
+    color-scheme: light;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html:focus-within {
+      scroll-behavior: smooth;
+    }
+  }
+  a,
+  button,
+  label,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+  button,
+  [role="button"],
+  [data-slot="button"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    text-wrap: balance;
+  }
+  /* Tracking según tamaño (Apple): más cerrado cuanto más grande, el texto corrido queda en 0. */
+  h1 {
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+  h2 {
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+  h3 {
+    letter-spacing: -0.012em;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--brand-orange) 28%, transparent);
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .font-display {
+    font-family: var(--font-display);
+  }
+  /* Rótulo pequeño sobre títulos. */
+  .rotulo {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  /* Entrada única (héroe, tarjeta de gracias): sube 10px y aparece. --retraso escalona 70ms. */
+  .entrada {
+    animation: entrada 600ms var(--ease-out) both;
+    animation-delay: var(--retraso, 0ms);
+  }
+
+  /* Rejilla sutil para la franja oscura de datos. */
+  .rejilla {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  /* Barras de datos que crecen desde su base al entrar (sólo en la primera pintura). */
+  .crece-x {
+    transform-origin: left center;
+    animation: crece-x 700ms var(--ease-out) both;
+    animation-delay: var(--retraso, 0ms);
+  }
+}
+
+@keyframes entrada {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes crece-x {
+  from {
+    transform: scaleX(0.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entrada {
+    animation-name: entrada-suave;
+    animation-duration: 200ms;
+  }
+  .crece-x {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-property: color, background-color, border-color, opacity, box-shadow !important;
+  }
+}
+@keyframes entrada-suave {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------------------------------------------------------------- Materiales (Apple)
+ * Capas translúcidas: el contenido pasa por debajo. Las superficies grandes son más «gruesas»
+ * (más desenfoque y sombra) que las pequeñas. Borde superior claro = la luz que toca el material.
+ */
+@layer components {
+  .material-barra {
+    background: color-mix(in srgb, var(--card) 72%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+  .material-vidrio {
+    background: rgb(255 255 255 / 0.06);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgb(255 255 255 / 0.1);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
+  }
+  /* Efecto de borde de desplazamiento en lugar de una línea dura bajo la barra fija. */
+  .borde-desplazamiento {
+    box-shadow: 0 1px 0 rgb(29 47 59 / 0.06), 0 8px 24px -16px rgb(29 47 59 / 0.25);
+  }
+  /* Respuesta al presionar: inmediata, en el pointer-down, con resorte sin rebote. */
+  .presionable {
+    transition: transform 320ms var(--spring);
+  }
+  .presionable:active {
+    transform: scale(0.97);
+    transition-duration: 90ms;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .material-barra {
+    background: var(--card);
+    backdrop-filter: none;
+  }
+  .material-vidrio {
+    background: rgb(255 255 255 / 0.12);
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .material-barra {
+    background: var(--card);
+    backdrop-filter: none;
+    box-shadow: 0 1px 0 var(--brand-navy);
+  }
+  .material-vidrio {
+    background: var(--brand-navy-deep);
+    border-color: rgb(255 255 255 / 0.6);
+  }
+}

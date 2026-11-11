@@ -1,0 +1,162 @@
+{
+  "_fuente": "Portal de Trámites y Servicios del Ayuntamiento de Hermosillo — https://tramites.hermosillo.gob.mx/",
+  "_verificado": "2026-11-11, catálogo verificado por el equipo H-TEOYE",
+  "_instrucciones": "Los 'id' son identificadores estables: no los cambies, porque vinculan cada trámite con sus evaluaciones. Tras editar este archivo ejecuta: npm run db:catalogo",
+  "dependencias": [
+    {
+      "id": "tesoreria-municipal",
+      "nombre": "Tesorería Municipal",
+      "tramites": [
+        {
+          "id": "tesoreria-pago-contribuciones",
+          "nombre": "Pago de contribuciones municipales: impuesto predial, multas de tránsito, multas administrativas y otras contribuciones.",
+          "modalidad": "ventanilla"
+        },
+        {
+          "id": "tesoreria-certificado-no-adeudo-predial",
+          "nombre": "Certificado de no adeudo de impuesto predial",
+          "modalidad": "ventanilla"
+        },
+        {
+          "id": "tesoreria-traslado-dominio",
+          "nombre": "Manifestación de traslado de dominio predio urbano",
+          "modalidad": "en_linea"
+        },
+        {
+          "id": "tesoreria-convenio-predial",
+          "nombre": "Convenio de impuesto predial",
+          "modalidad": "ventanilla"
+        },
+        {
+          "id": "tesoreria-descuento-grupos-vulnerables",
+          "nombre": "Solicitud de descuento a grupos vulnerables",
+          "modalidad": "ventanilla"
+        }
+      ]
+    },
+    {
+      "id": "agua-de-hermosillo",
+      "nombre": "Agua de Hermosillo",
+      "tramites": [
+        {
+          "id": "agua-pago-servicios",
+          "nombre": "Pago de servicios de agua, drenaje y saneamiento",
+          "modalidad": "en_linea"
+        },
+        {
+          "id": "agua-contratacion-servicios",
+          "nombre": "Contratación de servicios de agua y drenaje",
+          "modalidad": "ventanilla"
+        },
+        {
+          "id": "agua-aclaraciones",
+          "nombre": "Aclaraciones",
+          "modalidad": "en_linea"
+        },
+        {
+          "id": "agua-convenio-pago",
+          "nombre": "Convenio de pago",
+          "modalidad": "ventanilla"
+        },
+        {
+          "id": "agua-tarifa-social",
+          "nombre": "Tarifa social",
+          "modalidad": "en_linea"
+        }
+      ]
+    },
+    {
+      "id": "ordenamiento-desarrollo-urbano",
+      "nombre": "Dirección General de Ordenamiento y Desarrollo Urbano",
+      "tramites": [
+        {
+          "id": "urbano-licencia-construccion",
+          "nombre": "Licencia de construcción, remodelación y ampliación habitacional",
+          "modalidad": "en_linea"
+        },
+        {
+          "id": "urbano-licencia-funcionamiento",
+          "nombre": "Licencia de funcionamiento (establecimientos comerciales, industriales o de servicios)",
+          "modalidad": "en_linea"
+        },
+        {
+          "id": "urbano-licencia-uso-suelo",
+          "nombre": "Licencia de uso de suelo",
+          "modalidad": "en_linea"
+        },
+        {
+          "id": "urbano-numero-oficial",
+          "nombre": "Autorización de número oficial",
+          "modalidad": "en_linea"
+        },
+        {
+          "id": "urbano-regularizacion-construccion",
+          "nombre": "Regularización de construcción (menor a 60 m²)",
+          "modalidad": "en_linea"
+        }
+      ]
+    },
+    {
+      "id": "seguridad-publica-transito",
+      "nombre": "Seguridad Pública — Tránsito",
+      "tramites": [
+        {
+          "id": "transito-autorizacion-licencia-conducir",
+          "nombre": "Autorización para obtención de licencia de conducir",
+          "modalidad": "ventanilla"
+        },
+        {
+          "id": "transito-convenio-accidente-devolucion",
+          "nombre": "Convenio por accidente y devolución de vehículo a disposición de Tránsito Municipal",
+          "modalidad": "ventanilla"
+        },
+        {
+          "id": "transito-aviso-extravio-placas",
+          "nombre": "Aviso de extravío de placas",
+          "modalidad": "ventanilla"
+        },
+        {
+          "id": "transito-constancia-peritaje",
+          "nombre": "Solicitud de constancia de peritaje mecánico",
+          "modalidad": "ventanilla"
+        },
+        {
+          "id": "transito-permiso-carga-descarga",
+          "nombre": "Permiso para maniobra de carga y descarga",
+          "modalidad": "en_linea"
+        }
+      ]
+    },
+    {
+      "id": "dif-hermosillo",
+      "nombre": "DIF Hermosillo",
+      "tramites": [
+        {
+          "id": "dif-certificado-discapacidad",
+          "nombre": "Expedición de certificado de discapacidad",
+          "modalidad": "ventanilla"
+        },
+        {
+          "id": "dif-tarjeton-discapacidad",
+          "nombre": "Trámite de tarjetón de discapacidad",
+          "modalidad": "con_formato"
+        },
+        {
+          "id": "dif-apoyos-alimentarios",
+          "nombre": "Programas de apoyos alimentarios",
+          "modalidad": "ventanilla"
+        },
+        {
+          "id": "dif-convenios-pension-alimenticia",
+          "nombre": "Convenios de pensión alimenticia",
+          "modalidad": "ventanilla"
+        },
+        {
+          "id": "dif-recepcion-denuncias-vulneracion-derechos",
+          "nombre": "Recepción de denuncias por vulneración de derechos de niñas, niños, adolescentes y adultos mayores",
+          "modalidad": "ventanilla"
+        }
+      ]
+    }
+  ]
+}

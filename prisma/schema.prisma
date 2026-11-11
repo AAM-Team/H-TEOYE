@@ -1,0 +1,219 @@
+// H-TEOYE — Tu voz mejora Hermosillo
+// Esquema de datos compartido por el portal ciudadano y el panel institucional.
+//
+// Principios de gobernanza reflejados en el modelo:
+// - Evaluacion NO guarda nombre, CURP, correo, número de expediente ni IP.
+// - Los comentarios pasan por moderación (estadoComentario) antes de ser públicos.
+// - Toda fila generada para demostración lleva esDemo = true.
+// - Las acciones de mejora sólo se publican después de ser validadas.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+  engineType      = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  ADMINISTRADOR // Coordinación general: todas las dependencias, modera, valida y publica
+  RESPONSABLE // Titular / responsable de una dependencia: valida y modera lo de su dependencia
+  ENLACE // Enlace operativo: consulta y registra acciones de su dependencia
+}
+
+/// Modalidad oficial del trámite según el Portal de Trámites y Servicios del Ayuntamiento.
+enum Modalidad {
+  VENTANILLA
+  EN_LINEA
+  CON_FORMATO
+}
+
+enum Canal {
+  PRESENCIAL
+  EN_LINEA
+  TELEFONICO
+}
+
+/// Problemas en trámites, alineados con las categorías de barreras de la ENCIG (INEGI).
+enum Problema {
+  NINGUNO
+  FILAS_LARGAS
+  REQUISITOS_NO_VISIBLES
+  HORARIO_RESTRINGIDO
+  REQUISITOS_EXCESIVOS
+  VENTANILLA_EN_VENTANILLA
+  COSTOS_EXCESIVOS
+}
+
+enum EstadoComentario {
+  SIN_COMENTARIO
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+}
+
+enum EstadoAccion {
+  PENDIENTE
+  EN_REVISION
+  EN_PROCESO
+  CONCLUIDA
+}
+
+model Dependencia {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  nombre      String
+  nombreCorto String
+  descripcion String
+  orden       Int      @default(0)
+  activa      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tramites     Tramite[]
+  evaluaciones Evaluacion[]
+  acciones     AccionMejora[]
+  usuarios     Usuario[]
+}
+
+model Tramite {
+  id            String   @id @default(cuid())
+  /// Identificador estable del catálogo oficial (p. ej. "agua-tarifa-social"). Clave de importación.
+  clave         String?  @unique
+  dependenciaId String
+  nombre        String
+  modalidad     Modalidad?
+  descripcion   String?
+  orden         Int      @default(0)
+  activo        Boolean  @default(true)
+  /// true mientras el trámite sea un espacio reservado a la espera del catálogo oficial.
+  porDefinir    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  dependencia  Dependencia    @relation(fields: [dependenciaId], references: [id], onDelete: Restrict)
+  evaluaciones Evaluacion[]
+  acciones     AccionMejora[]
+
+  @@unique([dependenciaId, orden])
+  @@index([dependenciaId, activo])
+}
+
+model Evaluacion {
+  id            String @id @default(cuid())
+  tramiteId     String
+  /// Desnormalizado para agregar por dependencia sin JOIN y conservar el histórico si el trámite cambia.
+  dependenciaId String
+
+  // Calificaciones de 1 a 5 estrellas
+  trato        Int
+  claridad     Int
+  facilidad    Int
+  satisfaccion Int // Satisfacción general
+
+  canal Canal?
+
+  /// Problemas enfrentados (opcional, selección múltiple). Arreglo vacío = sin respuesta.
+  problemas Problema[]
+  /// ¿Le pidieron o sugirieron un pago no oficial? null = prefirió no responder / sin respuesta.
+  pagoIndebido Boolean?
+
+  comentario         String?
+  estadoComentario   EstadoComentario @default(SIN_COMENTARIO)
+  /// Se removió automáticamente algún dato personal (correo, teléfono, CURP) del comentario.
+  comentarioRedactado Boolean         @default(false)
+  comentarioRevisadoPorId String?
+  comentarioRevisadoEn    DateTime?
+
+  esDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  tramite              Tramite     @relation(fields: [tramiteId], references: [id], onDelete: Restrict)
+  dependencia          Dependencia @relation(fields: [dependenciaId], references: [id], onDelete: Restrict)
+  comentarioRevisadoPor Usuario?   @relation("ComentarioRevisor", fields: [comentarioRevisadoPorId], references: [id], onDelete: SetNull)
+
+  @@index([dependenciaId, createdAt])
+  @@index([tramiteId, createdAt])
+  @@index([estadoComentario])
+}
+
+model AccionMejora {
+  id            String       @id @default(cuid())
+  dependenciaId String
+  tramiteId     String?
+  titulo        String
+  descripcion   String
+  estado        EstadoAccion @default(PENDIENTE)
+  fechaCompromiso DateTime?
+
+  creadoPorId String
+  validada    Boolean   @default(false)
+  validadaPorId String?
+  validadaEn  DateTime?
+  publicada   Boolean   @default(false)
+  publicadaEn DateTime?
+
+  esDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dependencia Dependencia @relation(fields: [dependenciaId], references: [id], onDelete: Restrict)
+  tramite     Tramite?    @relation(fields: [tramiteId], references: [id], onDelete: SetNull)
+  creadoPor   Usuario     @relation("AccionCreador", fields: [creadoPorId], references: [id], onDelete: Restrict)
+  validadaPor Usuario?    @relation("AccionValidador", fields: [validadaPorId], references: [id], onDelete: SetNull)
+
+  @@index([dependenciaId, estado])
+  @@index([publicada])
+}
+
+model Usuario {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  nombre        String
+  passwordHash  String
+  rol           Rol
+  /// null sólo para ADMINISTRADOR
+  dependenciaId String?
+  activo        Boolean  @default(true)
+  ultimoAcceso  DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  dependencia          Dependencia?   @relation(fields: [dependenciaId], references: [id], onDelete: Restrict)
+  sesiones             Sesion[]
+  bitacora             Bitacora[]
+  accionesCreadas      AccionMejora[] @relation("AccionCreador")
+  accionesValidadas    AccionMejora[] @relation("AccionValidador")
+  comentariosRevisados Evaluacion[]   @relation("ComentarioRevisor")
+}
+
+model Sesion {
+  id        String   @id @default(cuid())
+  /// SHA-256 del token; el token en claro sólo vive en la cookie del navegador.
+  tokenHash String   @unique
+  usuarioId String
+  expiraEn  DateTime
+  createdAt DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+}
+
+model Bitacora {
+  id        String   @id @default(cuid())
+  usuarioId String?
+  accion    String // p. ej. "accion.validar", "comentario.aprobar", "sesion.iniciar"
+  entidad   String // p. ej. "AccionMejora"
+  entidadId String?
+  detalle   Json?
+  createdAt DateTime @default(now())
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@index([entidad, entidadId])
+  @@index([createdAt])
+}

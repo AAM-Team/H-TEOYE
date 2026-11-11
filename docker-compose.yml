@@ -1,47 +1,16 @@
+# Base de datos local para desarrollo: docker compose up -d
 services:
   db:
     image: postgres:16-alpine
+    container_name: hteoye-db
+    restart: unless-stopped
     environment:
-      - POSTGRES_DB=civica
-      - POSTGRES_USER=civica
-      - POSTGRES_PASSWORD=civica
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U civica -d civica"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  backend:
-    build: ./backend
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+      POSTGRES_USER: hteoye
+      POSTGRES_PASSWORD: hteoye
+      POSTGRES_DB: hteoye
     ports:
-      - "8000:8000"
+      - "5432:5432"
     volumes:
-      - ./backend:/app
-    environment:
-      - POSTGRES_DB=civica
-      - POSTGRES_USER=civica
-      - POSTGRES_PASSWORD=civica
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-    depends_on:
-      db:
-        condition: service_healthy
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    environment:
-      - VITE_USE_POLLING=true
-      - API_URL=http://backend:8000
-    depends_on:
-      - backend
-
+      - hteoye-datos:/var/lib/postgresql/data
 volumes:
-  postgres_data:
+  hteoye-datos:
