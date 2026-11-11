@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { cerrarSesion, crearSesion, obtenerUsuario, registrarBitacora } from "@/lib/auth/sesion";
-import { consumirCupo } from "@/lib/limite-envios";
+import { consumirCupoCompartido, ipDeEncabezados } from "@/lib/limite-compartido";
 import { prisma } from "@/lib/prisma";
 
 export type EstadoAcceso = { estado: "inicial" } | { estado: "error"; mensaje: string };
@@ -24,9 +24,15 @@ export async function iniciarSesion(_previo: EstadoAcceso, formData: FormData): 
   if (!datos.success) return { estado: "error", mensaje: datos.error.issues[0]?.message ?? "Revisa tus datos." };
 
   const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "conexion-local";
-  const cupo = consumirCupo(`acceso:${ip}:${datos.data.email}`, Date.now(), 8, 15 * 60 * 1000);
-  if (!cupo.permitido) {
+  const ip = ipDeEncabezados(h);
+  const ventana = 15 * 60 * 1000;
+  // Por IP+correo (adivinar contraseña), por correo desde muchas IPs y por IP probando muchos correos.
+  const cupos = await Promise.all([
+    consumirCupoCompartido("acceso", `${ip}:${datos.data.email}`, 8, ventana),
+    consumirCupoCompartido("acceso-correo", datos.data.email, 20, ventana),
+    consumirCupoCompartido("acceso-ip", ip, 30, ventana),
+  ]);
+  if (cupos.some((c) => !c.permitido)) {
     return { estado: "error", mensaje: "Demasiados intentos. Espera unos minutos e inténtalo de nuevo." };
   }
 

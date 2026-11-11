@@ -112,6 +112,27 @@ El importador:
 > El archivo verificado usa el id `ordenamiento-desarrollo-urbano`; el importador lo asocia a la dependencia
 > `ordenamiento-y-desarrollo-urbano` (su URL pública) mediante un alias.
 
+## Asistente «Sol» (chatbot)
+
+Botón flotante (el sol, esquina inferior derecha) en todas las páginas del portal público. Abre una
+ventana de chat que:
+
+- Responde sobre los trámites del [Portal de Trámites de Hermosillo](https://tramites.hermosillo.gob.mx/)
+  (requisitos, costo, plazos, horarios, contacto, enlace en línea) con RAG: recuperación híbrida
+  BM25 + embeddings de Gemini y respuesta generada con Gemini.
+- Lleva a evaluar un trámite en H-TEOYE (`/evaluar/clave/<clave>` redirige a la encuesta).
+- Canaliza quejas, denuncias y reconocimientos a <https://denuncias.hermosillo.gob.mx/>.
+
+Configuración: pon `GEMINI_API_KEY` en `.env.local` (ver `.env.example`).
+
+| Script | Para qué |
+|---|---|
+| `npm run asistente:extraer` | Vuelve a descargar el catálogo del portal → `src/lib/asistente/tramites-hermosillo.json` |
+| `npm run asistente:indexar` | Recalcula los embeddings → `src/lib/asistente/embeddings-tramites.json` |
+
+Ejecuta ambos (en ese orden) cuando el portal oficial cambie. Sin el archivo de embeddings o sin cuota
+de Gemini, la búsqueda sigue funcionando sólo con BM25.
+
 ## Dos portales
 
 | Portal | Ruta | Cuenta | Para qué |

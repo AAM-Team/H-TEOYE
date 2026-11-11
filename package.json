@@ -17,7 +17,9 @@
     "db:local": "node scripts/local-db.mjs",
     "db:local:stop": "node scripts/local-db.mjs stop",
     "postinstall": "prisma generate",
-    "db:catalogo": "tsx prisma/importar-catalogo.ts"
+    "db:catalogo": "tsx prisma/importar-catalogo.ts",
+    "asistente:extraer": "node scripts/extraer-tramites.mjs",
+    "asistente:indexar": "node scripts/indexar-tramites.mjs"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",

@@ -23,7 +23,16 @@
 
 # misc
 .DS_Store
+Thumbs.db
+desktop.ini
 *.pem
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# herramientas locales de agentes / editores (configuración por máquina)
+/.claude/
 
 # debug
 npm-debug.log*
@@ -31,9 +40,14 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files: NUNCA subir claves (Gemini, base de datos, sal de límites). Sólo la plantilla.
 .env*
 !.env.example
+*.env
+secrets*.json
+*.key
+*.p12
+*.pfx
 
 # vercel
 .vercel
