@@ -74,6 +74,34 @@ Los datos persisten en `.local/postgres-data` (excluido de Git). Despu?s de rein
 ejecuta `npm run db:local` antes de `npm run dev`. Para detener la base: `npm run db:local:stop`.
 No ejecutes esta alternativa y Docker en el mismo puerto a la vez.
 
+### Compartir en el mismo Wi-Fi o hotspot
+
+Para que otras personas prueben el sitio, usa la versi?n optimizada en vez de `npm run dev`:
+
+```powershell
+npm run db:local
+npm run build
+npm run preview:lan
+```
+
+Desde otro dispositivo conectado al mismo Wi-Fi/hotspot, abre `http://172.20.10.11:3001`
+(IP de esta computadora al configurar la prueba). Mant?n encendida la computadora y abiertas la base
+y la terminal del servidor. Si cambia la red, consulta la nueva direcci?n IPv4 con `ipconfig`.
+La compilaci?n de producci?n usa `.next-production` y no interfiere con `npm run dev`.
+Vuelve a ejecutar `npm run build` y reinicia `npm run preview:lan` despu?s de cambiar c?digo.
+
+Si no abre desde otro dispositivo:
+
+- Comprueba que ambos est?n en la misma red; `localhost` en el tel?fono apunta al propio tel?fono.
+- Escribe `http://`, no `https://`, y usa el puerto `3001` de esta prueba.
+- Revisa que Windows permita Node.js en el perfil de red activo, sin desactivar el firewall.
+- Algunas redes de invitados y hotspots a?slan dispositivos; prueba un Wi-Fi que permita comunicaci?n entre ellos.
+- Esta IP es privada: para visitas desde Internet hace falta desplegar el sitio o configurar un t?nel. Subirlo a GitHub no inicia el servidor ni PostgreSQL.
+
+Si desarrollas desde otro dispositivo en el puerto 3000, agrega la IP actual a `allowedDevOrigins`
+en `next.config.ts` y reinicia `npm run dev`. El modo desarrollo compila rutas al visitarlas y no
+es el indicado para medir la respuesta en el tel?fono.
+
 ### Scripts
 
 | Script | Qué hace |

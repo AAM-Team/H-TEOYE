@@ -30,6 +30,9 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  // La compilación de producción no interfiere con el servidor de desarrollo.
+  distDir: process.env.NODE_ENV === "production" ? ".next-production" : ".next",
+  allowedDevOrigins: ["172.20.10.11"],
   cacheComponents: false,
   poweredByHeader: false,
   turbopack: {

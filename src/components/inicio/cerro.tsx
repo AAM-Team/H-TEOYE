@@ -15,7 +15,25 @@ function luces(cantidad: number, semilla: number, x0: number, x1: number, y0: nu
     blanca: azar() < 0.22,
   }));
 }
-const LUCES = luces(150, 7, 0, 1440, 452, 540);
+// Lienzo ancho (x de -480 a 1920) para que en pantallas grandes el cerro se vea completo sin recortar el cielo.
+const X0 = -480;
+const ANCHO = 2400;
+const LUCES = luces(240, 7, X0, X0 + ANCHO, 452, 540);
+
+/** Horizonte de la ciudad: bloques de edificios deterministas a lo largo de todo el lienzo. */
+const CIUDAD = (() => {
+  let s = 11;
+  const azar = () => ((s = (s * 1664525 + 1013904223) % 4294967296) / 4294967296);
+  let x = X0;
+  let d = `M${X0} 540 L${X0} 470`;
+  while (x < X0 + ANCHO) {
+    const w = 40 + Math.round(azar() * 70);
+    const h = 452 + Math.round(azar() * 20);
+    d += ` L${x} ${h} L${x + w} ${h}`;
+    x += w;
+  }
+  return `${d} L${X0 + ANCHO} 540 Z`;
+})();
 const LUCES_LADERA = luces(26, 21, 330, 640, 420, 452);
 
 /** Torre de celosía (antena) con su baliza roja. */
@@ -59,7 +77,7 @@ export function CerroDeLaCampana({
   cielo?: boolean;
 }) {
   return (
-    <svg aria-hidden="true" className={className} viewBox="0 0 1440 540" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+    <svg aria-hidden="true" className={className} viewBox={`${X0} 0 ${ANCHO} 540`} preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="cc-cielo" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#ef7900" stopOpacity="0" />
@@ -84,27 +102,29 @@ export function CerroDeLaCampana({
           <stop offset="1" stopColor="#fff2c4" stopOpacity="0" />
         </radialGradient>
         <clipPath id="cc-forma">
-          <path d="M300 456 C 420 440, 520 404, 610 368 C 680 340, 720 300, 752 246 C 768 220, 778 196, 792 186 L 812 178 L 838 182 C 856 190, 868 204, 884 226 C 912 264, 946 300, 1000 328 C 1070 362, 1160 400, 1300 432 L 1440 448 L 1440 540 L 300 540 Z" />
+          <path d="M-480 474 L 120 466 L300 456 C 420 440, 520 404, 610 368 C 680 340, 720 300, 752 246 C 768 220, 778 196, 792 186 L 812 178 L 838 182 C 856 190, 868 204, 884 226 C 912 264, 946 300, 1000 328 C 1070 362, 1160 400, 1300 432 L 1440 448 L 1700 462 L 1920 468 L 1920 540 L -480 540 Z" />
         </clipPath>
       </defs>
 
       {cielo && (
         <>
-          <rect width="1440" height="540" fill="url(#cc-cielo)" />
+          <rect x={X0} width={ANCHO} height="540" fill="url(#cc-cielo)" />
           {/* Nubes oscuras del atardecer */}
           <g fill="#3a1f2e" opacity="0.55">
             <path d="M0 150 C 180 132, 380 140, 560 156 C 420 166, 200 170, 0 172 Z" />
             <path d="M980 120 C 1140 104, 1300 108, 1440 118 L 1440 140 C 1290 134, 1120 136, 980 120 Z" />
             <path d="M1010 196 C 1160 182, 1320 186, 1440 196 L 1440 212 C 1300 206, 1150 208, 1010 196 Z" opacity="0.7" />
             <path d="M120 236 C 260 226, 420 230, 540 240 C 400 248, 250 248, 120 236 Z" opacity="0.6" />
+            <path d="M-460 196 C -300 184, -120 188, 40 200 C -120 208, -300 208, -460 196 Z" opacity="0.7" />
+            <path d="M1480 168 C 1620 156, 1780 160, 1920 170 L 1920 186 C 1780 180, 1620 182, 1480 168 Z" />
           </g>
         </>
       )}
 
       {/* El cerro: ladera oscura y cima iluminada */}
       <g clipPath="url(#cc-forma)">
-        <rect x="300" y="170" width="1140" height="370" fill="url(#cc-ladera)" />
-        <rect x="300" y="170" width="1140" height="370" fill="url(#cc-cima)" />
+        <rect x={X0} y="170" width={ANCHO} height="370" fill="url(#cc-ladera)" />
+        <rect x={X0} y="170" width={ANCHO} height="370" fill="url(#cc-cima)" />
         {/* Textura de roca y vegetación en la zona iluminada */}
         <g fill="#f4f0b8" opacity="0.5">
           <path d="M790 196 l14 -6 l10 10 l-12 8 Z" />
@@ -130,12 +150,10 @@ export function CerroDeLaCampana({
       <Torre x={798} base={186} alto={150} ancho={22} />
       <Torre x={842} base={186} alto={104} ancho={16} />
       <Torre x={470} base={448} alto={130} ancho={14} />
+      <Torre x={1660} base={462} alto={76} ancho={10} />
 
       {/* Ciudad */}
-      <path
-        d="M0 470 L60 470 L60 458 L110 458 L110 466 L190 466 L190 452 L240 452 L240 468 L330 468 L330 456 L380 456 L380 470 L470 470 L470 462 L560 462 L560 472 L700 472 L700 458 L760 458 L760 470 L900 470 L900 460 L980 460 L980 472 L1100 472 L1100 456 L1160 456 L1160 468 L1260 468 L1260 452 L1320 452 L1320 466 L1440 466 L1440 540 L0 540 Z"
-        fill="#071514"
-      />
+      <path d={CIUDAD} fill="#071514" />
       <g>
         {[...LUCES_LADERA, ...LUCES].map((l, i) => (
           <circle key={i} cx={l.x} cy={l.y} r={l.r} fill={l.blanca ? "#f5f7ff" : "#ffb347"} opacity={l.o} />

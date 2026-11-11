@@ -16,7 +16,9 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         Saltar al contenido
       </a>
       <Encabezado />
-      <AvisoPrototipo />
+      <Suspense fallback={<ContenidoAvisoPrototipo />}>
+        <AvisoPrototipo />
+      </Suspense>
       <main id="contenido" className="flex-1">
         {children}
       </main>

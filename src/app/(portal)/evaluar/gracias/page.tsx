@@ -73,7 +73,7 @@ export default async function GraciasPage({ searchParams }: PageProps<"/evaluar/
           </Button>
         </div>
       </div>
-      <div className="relative h-[220px] sm:h-[300px]">
+      <div className="relative h-[clamp(200px,22vw,500px)]">
         <CerroDeLaCampana className="absolute inset-0 h-full w-full" />
       </div>
     </div>

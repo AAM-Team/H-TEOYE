@@ -35,9 +35,9 @@ function FilaEstrellas({
   return (
     <fieldset className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
       <legend className="sr-only">{titulo}</legend>
-      <span aria-hidden="true" className="min-w-0 text-sm font-medium text-navy">
+      <span aria-hidden="true" className="min-w-0 text-sm font-medium text-white">
         {titulo}
-        <span className={cn("block text-xs", etiqueta ? "text-primary-ink" : "text-muted-foreground")}>
+        <span className={cn("block text-xs", etiqueta ? "font-semibold text-orange" : "text-white/55")}>
           {etiqueta ?? "Sin calificar"}
         </span>
       </span>
@@ -62,7 +62,7 @@ function FilaEstrellas({
               strokeWidth={1.75}
               className={cn(
                 "size-7 transition-[color,fill,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] group-active:scale-90",
-                e.valor <= visible ? "fill-orange text-orange" : "fill-transparent text-input",
+                e.valor <= visible ? "fill-orange text-orange" : "fill-transparent text-white/35",
               )}
             />
           </label>
@@ -107,19 +107,19 @@ export function EncuestaDemo({ dependencias }: { dependencias: DependenciaDemo[]
   return (
     <section
       aria-labelledby={`${id}-titulo`}
-      className="relative overflow-hidden rounded-2xl border border-white/10 bg-white text-navy shadow-[0_40px_80px_-30px_rgb(0_0_0/0.6)]"
+      className="material-noche relative overflow-hidden rounded-[1.75rem] text-white"
     >
       {/* Barra superior: contexto y progreso */}
-      <div className="flex items-center justify-between gap-3 border-b px-5 py-3">
-        <span className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-          <span className="size-2 rounded-full bg-teal" aria-hidden="true" />
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
+        <span className="flex items-center gap-2 text-xs font-semibold text-white/70">
+          <span className="size-2 rounded-full bg-teal shadow-[0_0_0_3px_rgb(0_154_156/0.3)]" aria-hidden="true" />
           Prueba la encuesta · no se guarda
         </span>
-        <span className="tabular text-xs font-semibold text-muted-foreground" aria-live="polite">
+        <span className="tabular text-xs font-semibold text-white/70" aria-live="polite">
           {paso === "calificar" ? `${completas} de 4` : "Resultado"}
         </span>
       </div>
-      <div className="h-1 bg-muted" aria-hidden="true">
+      <div className="h-1 bg-white/10" aria-hidden="true">
         <div
           className="h-full origin-left bg-orange transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
           style={{ transform: `scaleX(${paso === "comparar" ? 1 : completas / 4})` }}
@@ -133,7 +133,7 @@ export function EncuestaDemo({ dependencias }: { dependencias: DependenciaDemo[]
           </h2>
 
           <fieldset className="mt-4">
-            <legend className="text-xs font-semibold text-muted-foreground">Dependencia</legend>
+            <legend className="text-xs font-semibold text-white/60">Dependencia</legend>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {dependencias.map((d) => (
                 <label
@@ -141,7 +141,7 @@ export function EncuestaDemo({ dependencias }: { dependencias: DependenciaDemo[]
                   className={cn(
                     "cursor-pointer rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
                     "has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50",
-                    d.slug === slug ? "border-primary bg-primary text-white" : "bg-white text-navy hover:bg-muted",
+                    d.slug === slug ? "border-white bg-white text-navy" : "border-white/15 bg-white/[0.06] text-white hover:bg-white/15",
                   )}
                 >
                   <input
@@ -158,7 +158,7 @@ export function EncuestaDemo({ dependencias }: { dependencias: DependenciaDemo[]
             </div>
           </fieldset>
 
-          <div className="mt-3 divide-y">
+          <div className="mt-3 divide-y divide-white/10">
             {DIMENSIONES.map((d) => (
               <FilaEstrellas
                 key={d.clave}
@@ -186,7 +186,7 @@ export function EncuestaDemo({ dependencias }: { dependencias: DependenciaDemo[]
           <h2 id={`${id}-titulo`} ref={tituloRef} tabIndex={-1} className="text-xl font-semibold outline-none">
             Tú frente a {dep.nombreCorto}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-white/70">
             {diferencia == null
               ? "Aún no hay suficientes evaluaciones para comparar."
               : Math.abs(diferencia) < 0.25
@@ -196,7 +196,7 @@ export function EncuestaDemo({ dependencias }: { dependencias: DependenciaDemo[]
                   : `Te fue peor que al promedio: −${formatearPromedio(-diferencia)} estrellas. Justo lo que esta encuesta quiere detectar.`}
           </p>
 
-          <div className="mt-4 flex items-center gap-4 text-xs font-medium text-muted-foreground">
+          <div className="mt-4 flex items-center gap-4 text-xs font-medium text-white/70">
             <span className="flex items-center gap-1.5">
               <span className="size-2.5 rounded-sm bg-orange" aria-hidden="true" /> Tu calificación
             </span>
@@ -218,7 +218,7 @@ export function EncuestaDemo({ dependencias }: { dependencias: DependenciaDemo[]
                       { valor: prom ?? 0, color: "bg-teal", texto: `Promedio: ${formatearPromedio(prom)}` },
                     ].map((b) => (
                       <span key={b.texto} className="flex items-center gap-2">
-                        <span className="h-2.5 flex-1 rounded-full bg-muted">
+                        <span className="h-2.5 flex-1 rounded-full bg-white/10">
                           <span
                             className={cn("crece-x block h-full rounded-full", b.color)}
                             style={
@@ -226,7 +226,7 @@ export function EncuestaDemo({ dependencias }: { dependencias: DependenciaDemo[]
                             }
                           />
                         </span>
-                        <span className="tabular w-24 shrink-0 text-xs text-muted-foreground">{b.texto}</span>
+                        <span className="tabular w-24 shrink-0 text-xs text-white/70">{b.texto}</span>
                       </span>
                     ))}
                   </dd>
@@ -245,7 +245,7 @@ export function EncuestaDemo({ dependencias }: { dependencias: DependenciaDemo[]
               type="button"
               variant="outline"
               size="lg"
-              className="rounded-full"
+              className="rounded-full border-white/25 bg-white/5 text-white hover:bg-white/10 hover:text-white"
               onClick={() => {
                 setCalificaciones(SIN_CALIFICAR);
                 setPaso("calificar");

@@ -244,6 +244,16 @@
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     backdrop-filter: blur(20px) saturate(180%);
   }
+  /* Vidrio oscuro esmerilado para superficies grandes sobre la ilustración (más grueso: más blur y sombra). */
+  .material-noche {
+    background: linear-gradient(160deg, rgb(6 38 43 / 0.55), rgb(4 31 36 / 0.38));
+    -webkit-backdrop-filter: blur(22px) saturate(170%);
+    backdrop-filter: blur(22px) saturate(170%);
+    border: 1px solid rgb(255 255 255 / 0.14);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.16),
+      0 40px 80px -30px rgb(0 0 0 / 0.65);
+  }
   .material-vidrio {
     background: rgb(255 255 255 / 0.06);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
@@ -266,6 +276,10 @@
 }
 
 @media (prefers-reduced-transparency: reduce) {
+  .material-noche {
+    background: #06363b;
+    backdrop-filter: none;
+  }
   .material-barra {
     background: var(--card);
     backdrop-filter: none;
@@ -276,6 +290,11 @@
   }
 }
 @media (prefers-contrast: more) {
+  .material-noche {
+    background: var(--brand-navy-deep);
+    backdrop-filter: none;
+    border-color: rgb(255 255 255 / 0.6);
+  }
   .material-barra {
     background: var(--card);
     backdrop-filter: none;

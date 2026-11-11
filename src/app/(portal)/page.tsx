@@ -98,7 +98,7 @@ export default async function InicioPage() {
           </div>
         </div>
         {/* Postal: el Cerro de la Campana al atardecer */}
-        <div className="relative -mt-10 h-[260px] sm:h-[340px] lg:-mt-32 lg:h-[460px]">
+        <div className="relative -mt-10 h-[clamp(260px,24vw,580px)] lg:-mt-40">
           <CerroDeLaCampana className="absolute inset-0 h-full w-full" />
         </div>
       </section>
