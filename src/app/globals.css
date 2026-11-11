@@ -305,3 +305,23 @@
     border-color: rgb(255 255 255 / 0.6);
   }
 }
+
+/* Desplegable con transición de altura (navegadores con ::details-content; en los demás abre al instante). */
+.desplegable {
+  interpolate-size: allow-keywords;
+}
+.desplegable::details-content {
+  block-size: 0;
+  overflow: clip;
+  transition:
+    block-size 320ms var(--spring),
+    content-visibility 320ms allow-discrete;
+}
+.desplegable[open]::details-content {
+  block-size: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .desplegable::details-content {
+    transition: none;
+  }
+}

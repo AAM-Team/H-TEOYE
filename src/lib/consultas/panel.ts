@@ -15,7 +15,7 @@ export async function resumenPanel(filtro: Alcance) {
   const ahora = Date.now();
   const hace30 = new Date(ahora - 30 * DIA);
   const hace60 = new Date(ahora - 60 * DIA);
-  const [recientes, previas, prom30, prom60, pendientes, abiertas, porValidar] = await Promise.all([
+  const [recientes, previas, prom30, prom60, pendientes, abiertas, porValidar, comentarios, acciones] = await Promise.all([
     prisma.evaluacion.count({ where: { ...filtro, createdAt: { gte: hace30 } } }),
     prisma.evaluacion.count({ where: { ...filtro, createdAt: { gte: hace60, lt: hace30 } } }),
     prisma.evaluacion.aggregate({ where: { ...filtro, createdAt: { gte: hace30 } }, _avg: { satisfaccion: true } }),
@@ -23,7 +23,15 @@ export async function resumenPanel(filtro: Alcance) {
     prisma.evaluacion.count({ where: { ...filtro, estadoComentario: "PENDIENTE" } }),
     prisma.accionMejora.count({ where: { ...filtro, estado: { not: "CONCLUIDA" } } }),
     prisma.accionMejora.count({ where: { ...filtro, validada: false } }),
+    prisma.evaluacion.groupBy({
+      by: ["estadoComentario"],
+      where: { ...filtro, estadoComentario: { not: "SIN_COMENTARIO" } },
+      _count: { _all: true },
+    }),
+    prisma.accionMejora.groupBy({ by: ["estado"], where: filtro, _count: { _all: true } }),
   ]);
+  const porComentario = new Map<string, number>(comentarios.map((c) => [c.estadoComentario, c._count._all]));
+  const porAccion = new Map<string, number>(acciones.map((a) => [a.estado, a._count._all]));
   return {
     recientes,
     previas,
@@ -32,6 +40,17 @@ export async function resumenPanel(filtro: Alcance) {
     pendientes,
     abiertas,
     porValidar,
+    comentarios: {
+      PENDIENTE: porComentario.get("PENDIENTE") ?? 0,
+      APROBADO: porComentario.get("APROBADO") ?? 0,
+      RECHAZADO: porComentario.get("RECHAZADO") ?? 0,
+    },
+    acciones: {
+      PENDIENTE: porAccion.get("PENDIENTE") ?? 0,
+      EN_REVISION: porAccion.get("EN_REVISION") ?? 0,
+      EN_PROCESO: porAccion.get("EN_PROCESO") ?? 0,
+      CONCLUIDA: porAccion.get("CONCLUIDA") ?? 0,
+    },
   };
 }
 
@@ -45,6 +64,8 @@ export type Prioridad = {
   total: number;
   satisfaccion: number;
   peorAspecto: { titulo: string; valor: number } | null;
+  /** Trato, claridad y facilidad (en el orden de DIMENSIONES), para dibujarlos lado a lado. */
+  aspectos: { titulo: string; valor: number | null }[];
   problema: { etiqueta: string; proporcion: number } | null;
   pagoIndebido: number | null;
   accionAbierta: string | null;
@@ -110,6 +131,7 @@ export async function prioridades(filtro: Alcance, limite = 4): Promise<Priorida
       total: g._count._all,
       satisfaccion: g._avg.satisfaccion ?? 0,
       peorAspecto: aspectos[0] ?? null,
+      aspectos: DIMENSIONES.filter((d) => d.clave !== "satisfaccion").map((d) => ({ titulo: d.titulo, valor: g._avg[d.clave] })),
       problema: top && n ? { etiqueta: ETIQUETA_PROBLEMA.get(top.problema) ?? top.problema, proporcion: top.total / n } : null,
       pagoIndebido: si + no >= MIN_MUESTRA ? si / (si + no) : null,
       accionAbierta: acciones.find((a) => a.tramiteId === g.tramiteId)?.titulo ?? null,
