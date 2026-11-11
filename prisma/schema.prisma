@@ -217,3 +217,13 @@ model Bitacora {
   @@index([entidad, entidadId])
   @@index([createdAt])
 }
+
+/// Contadores de límite de uso compartidos entre instancias (serverless). La clave es un hash:
+/// nunca se guarda la IP ni otro dato identificable.
+model LimiteUso {
+  clave    String   @id
+  conteo   Int
+  expiraEn DateTime
+
+  @@index([expiraEn])
+}

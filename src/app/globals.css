@@ -305,3 +305,41 @@
     border-color: rgb(255 255 255 / 0.6);
   }
 }
+
+/* ---------- Asistente flotante (Sol) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .asistente-panel {
+    transform-origin: bottom right;
+    animation: asistente-abrir 280ms var(--ease-out);
+  }
+  .asistente-boton {
+    transition: transform 320ms var(--spring);
+  }
+  .asistente-boton:hover {
+    transform: scale(1.06);
+  }
+  .asistente-boton:active {
+    transform: scale(0.95);
+    transition-duration: 90ms;
+  }
+  .asistente-punto {
+    animation: asistente-punto 900ms ease-in-out infinite;
+  }
+}
+@keyframes asistente-abrir {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+}
+@keyframes asistente-punto {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}

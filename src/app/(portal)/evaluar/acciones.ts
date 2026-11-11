@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { consumirCupo } from "@/lib/limite-envios";
+import { consumirCupoCompartido, ipDeEncabezados } from "@/lib/limite-compartido";
 import { evaluacionSchema, formDataAObjeto } from "@/lib/validaciones/evaluacion";
 import { redactarDatosPersonales } from "@/lib/validaciones/datos-personales";
 
@@ -13,8 +13,7 @@ export type EstadoEnvio =
   | { estado: "error"; mensaje: string; errores?: Record<string, string[] | undefined> };
 
 async function identificadorConexion() {
-  const h = await headers();
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "conexion-local";
+  return ipDeEncabezados(await headers());
 }
 
 export async function enviarEvaluacion(_previo: EstadoEnvio, formData: FormData): Promise<EstadoEnvio> {
@@ -41,7 +40,7 @@ export async function enviarEvaluacion(_previo: EstadoEnvio, formData: FormData)
   }
 
   // Sólo cuentan los envíos válidos: corregir errores del formulario no consume cupo.
-  const cupo = consumirCupo(await identificadorConexion());
+  const cupo = await consumirCupoCompartido("evaluacion", await identificadorConexion(), 5, 10 * 60 * 1000);
   if (!cupo.permitido) {
     return {
       estado: "error",

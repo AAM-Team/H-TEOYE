@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240" role="img" aria-label="Asistente H-TEOYE">
+  <style>
+    .rays  { transform-origin:120px 120px; animation: spin 12s linear infinite, breathe 3s ease-in-out infinite; }
+    .face  { transform-origin:120px 120px; animation: bob 3s ease-in-out infinite; }
+    .eyes  { transform-origin:120px 112px; animation: squint 4s ease-in-out infinite; }
+    .cheek { transform-origin:center; transform-box:fill-box; animation: blush 3s ease-in-out infinite; }
+    .mouth { transform-origin:120px 130px; animation: smile 4s ease-in-out infinite; }
+    @keyframes spin    { to { rotate: 360deg; } }
+    @keyframes breathe { 0%,100% { scale:1; } 50% { scale:1.05; } }
+    @keyframes bob     { 0%,100% { transform:translateY(0) rotate(0deg); } 25% { transform:translateY(-3px) rotate(-3deg); } 75% { transform:translateY(-3px) rotate(3deg); } }
+    @keyframes squint  { 0%,85%,100% { transform:scaleY(1); } 90% { transform:scaleY(.4); } }
+    @keyframes blush   { 0%,100% { opacity:.8; transform:scale(1); } 50% { opacity:1; transform:scale(1.12); } }
+    @keyframes smile   { 0%,80%,100% { transform:scale(1); } 88% { transform:scale(1.25,1.4); } }
+    @media (prefers-reduced-motion: reduce) { * { animation:none !important; } }
+  </style>
+  <polygon class="rays" points="120.0,8.0 135.6,41.5 162.9,16.5 164.4,53.5 199.2,40.8 186.5,75.6 223.5,77.1 198.5,104.4 232.0,120.0 198.5,135.6 223.5,162.9 186.5,164.4 199.2,199.2 164.4,186.5 162.9,223.5 135.6,198.5 120.0,232.0 104.4,198.5 77.1,223.5 75.6,186.5 40.8,199.2 53.5,164.4 16.5,162.9 41.5,135.6 8.0,120.0 41.5,104.4 16.5,77.1 53.5,75.6 40.8,40.8 75.6,53.5 77.1,16.5 104.4,41.5" fill="#FFA41B" stroke="#FFA41B" stroke-width="6" stroke-linejoin="round"/>
+  <g class="face">
+    <circle cx="120" cy="120" r="74" fill="#FFB31A"/>
+    <circle cx="120" cy="120" r="66" fill="#FFD43B"/>
+    <g class="eyes" fill="none" stroke="#3A2A1A" stroke-width="5" stroke-linecap="round">
+      <path d="M84 114 Q93 102 102 114"/>
+      <path d="M138 114 Q147 102 156 114"/>
+    </g>
+    <ellipse class="cheek" cx="80"  cy="130" rx="11" ry="8" fill="#FF9EB5"/>
+    <ellipse class="cheek" cx="160" cy="130" rx="11" ry="8" fill="#FF9EB5"/>
+    <path class="mouth" d="M112 127 Q120 136 128 127" fill="none" stroke="#3A2A1A" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>
