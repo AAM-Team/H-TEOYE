@@ -4,6 +4,10 @@ import { hayDatosDemo } from "@/lib/consultas/publicas";
 
 export async function AvisoPrototipo() {
   const demo = await hayDatosDemo();
+  return <ContenidoAvisoPrototipo demo={demo} />;
+}
+
+export function ContenidoAvisoPrototipo({ demo = false }: { demo?: boolean }) {
   return (
     <div className="border-b border-orange/20 bg-orange-soft text-navy">
       <p className="mx-auto flex max-w-7xl items-start gap-2 px-4 py-2 text-xs leading-relaxed sm:items-center sm:px-6 lg:px-8">

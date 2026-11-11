@@ -127,6 +127,7 @@ export function Encabezado() {
               <li key={e.href}>
                 <Link
                   href={e.href}
+                  onClick={() => setAbiertoEn(null)}
                   aria-current={estaActivo(ruta, e.href) ? "page" : undefined}
                   className="block rounded-lg px-3 py-3 text-base font-medium text-navy aria-[current=page]:bg-primary-soft aria-[current=page]:text-primary-ink"
                 >
@@ -136,9 +137,9 @@ export function Encabezado() {
             ))}
           </ul>
           <Button asChild className="mt-2 w-full rounded-full" size="lg">
-            <Link href="/dependencias">Evaluar un trámite</Link>
+            <Link href="/dependencias" onClick={() => setAbiertoEn(null)}>Evaluar un trámite</Link>
           </Button>
-          <Link href="/panel/login" className="mt-3 flex items-center justify-center gap-1.5 py-2 text-sm font-medium text-muted-foreground">
+          <Link href="/panel/login" onClick={() => setAbiertoEn(null)} className="mt-3 flex items-center justify-center gap-1.5 py-2 text-sm font-medium text-muted-foreground">
             <Lock className="size-3.5" aria-hidden="true" /> Acceso para funcionarios
           </Link>
         </nav>

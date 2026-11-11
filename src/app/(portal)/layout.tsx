@@ -1,4 +1,5 @@
-import { AvisoPrototipo } from "@/components/portal/aviso-prototipo";
+import { Suspense } from "react";
+import { AvisoPrototipo, ContenidoAvisoPrototipo } from "@/components/portal/aviso-prototipo";
 import { Encabezado } from "@/components/portal/encabezado";
 import { Pie } from "@/components/portal/pie";
 
@@ -15,7 +16,9 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         Saltar al contenido
       </a>
       <Encabezado />
-      <AvisoPrototipo />
+      <Suspense fallback={<ContenidoAvisoPrototipo />}>
+        <AvisoPrototipo />
+      </Suspense>
       <main id="contenido" className="flex-1">
         {children}
       </main>

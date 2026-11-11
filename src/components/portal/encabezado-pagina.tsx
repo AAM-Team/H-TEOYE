@@ -29,7 +29,7 @@ export function EncabezadoPagina({
   return (
     <div className={cn("relative overflow-hidden bg-[linear-gradient(180deg,#041f24_0%,#06363b_100%)] text-white", className)}>
       <div className="rejilla pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,black,transparent)]" aria-hidden="true" />
-      <div className={cn("relative z-10 mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8", postal ? "pb-2" : "pb-10 sm:pb-12")}>
+      <div className={cn("relative z-10 mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8", postal ? "pb-4" : "pb-10 sm:pb-12")}>
         {migas && (
           <nav aria-label="Ruta de navegación">
             <ol className="flex flex-wrap items-center gap-1 text-sm text-white/60">
@@ -65,7 +65,7 @@ export function EncabezadoPagina({
         {children}
       </div>
       {postal && (
-        <div className="relative -mt-6 h-[170px] sm:h-[220px] lg:h-[260px]">
+        <div className="relative h-[clamp(170px,22vw,520px)]">
           <CerroDeLaCampana className="absolute inset-0 h-full w-full" />
         </div>
       )}
