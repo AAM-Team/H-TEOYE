@@ -1,0 +1,15 @@
+# Archivos que la CLI de Vercel NO debe subir al desplegar.
+# Las claves viven en las variables de entorno del proyecto en Vercel, nunca en archivos.
+.env
+.env.*
+!.env.example
+*.env
+*.pem
+*.key
+.local
+.claude
+.vercel
+.next
+node_modules
+coverage
+*.log

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { AsistenteFlotante } from "@/components/asistente/asistente-flotante";
 import { AvisoPrototipo, ContenidoAvisoPrototipo } from "@/components/portal/aviso-prototipo";
 import { Encabezado } from "@/components/portal/encabezado";
 import { Pie } from "@/components/portal/pie";
@@ -23,6 +24,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         {children}
       </main>
       <Pie />
+      <AsistenteFlotante />
     </>
   );
 }
