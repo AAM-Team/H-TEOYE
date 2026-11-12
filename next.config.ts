@@ -33,7 +33,9 @@ const nextConfig: NextConfig = {
   // Habilitar salida standalone para Docker
   output: "standalone",
   // La compilación de producción no interfiere con el servidor de desarrollo.
-  distDir: process.env.NODE_ENV === "production" ? ".next-production" : ".next",
+  // En Vercel debe ser ".next": la plataforma busca ahí la salida de la compilación
+  // (con ".next-production" todos los despliegues fallaban con NEXT_OUTPUT_DIR_MISSING).
+  distDir: process.env.NODE_ENV === "production" && !process.env.VERCEL ? ".next-production" : ".next",
   allowedDevOrigins: ["172.20.10.11"],
   cacheComponents: false,
   poweredByHeader: false,
