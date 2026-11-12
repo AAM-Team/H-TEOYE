@@ -32,7 +32,7 @@ import { redactarDatosPersonales } from "@/lib/validaciones/datos-personales";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const MAX_BYTES = 24 * 1024;
 const MAX_CARACTERES_MENSAJE = 1000;
@@ -40,7 +40,8 @@ const MAX_CARACTERES_TOTAL = 8000;
 const LIMITE_RAFAGA = { maximo: 8, ventanaMs: 60_000 };
 const LIMITE_HORA = { maximo: 60, ventanaMs: 60 * 60_000 };
 const LIMITE_DIARIO_GLOBAL = Number(process.env.ASISTENTE_LIMITE_DIARIO ?? 1500);
-const TIEMPO_MAXIMO_MS = 25_000;
+/** Tiempo total para escribir la respuesta (antes 25 s cortaba respuestas largas a media palabra). */
+const TIEMPO_MAXIMO_MS = 55_000;
 /** Debe coincidir con el que envía components/asistente/asistente-flotante.tsx. */
 const ENCABEZADO_CLIENTE = "x-hteoye-asistente";
 
@@ -169,19 +170,20 @@ export async function POST(req: Request) {
   }
 
   const ip = ipDeEncabezados(req.headers);
-  for (const [ambito, l] of [
-    ["asistente-rafaga", LIMITE_RAFAGA],
-    ["asistente-hora", LIMITE_HORA],
-  ] as const) {
-    const cupo = await consumirCupoCompartido(ambito, ip, l.maximo, l.ventanaMs);
+  const dia = new Date().toISOString().slice(0, 10);
+  // Las tres comprobaciones van en paralelo: una sola espera a la base de datos en lugar de tres.
+  const [rafaga, hora, global] = await Promise.all([
+    consumirCupoCompartido("asistente-rafaga", ip, LIMITE_RAFAGA.maximo, LIMITE_RAFAGA.ventanaMs),
+    consumirCupoCompartido("asistente-hora", ip, LIMITE_HORA.maximo, LIMITE_HORA.ventanaMs),
+    consumirCupoCompartido("asistente-global", dia, LIMITE_DIARIO_GLOBAL, 24 * 60 * 60_000),
+  ]);
+  for (const cupo of [rafaga, hora]) {
     if (!cupo.permitido) {
       return error("Enviaste muchos mensajes seguidos. Espera un momento e inténtalo de nuevo.", 429, {
         "retry-after": String(cupo.reintentarEnS),
       });
     }
   }
-  const dia = new Date().toISOString().slice(0, 10);
-  const global = await consumirCupoCompartido("asistente-global", dia, LIMITE_DIARIO_GLOBAL, 24 * 60 * 60_000);
   if (!global.permitido) {
     return error("El asistente alcanzó su límite de consultas de hoy. Vuelve mañana o consulta tramites.hermosillo.gob.mx.", 429, {
       "retry-after": String(global.reintentarEnS),
@@ -196,7 +198,8 @@ export async function POST(req: Request) {
   const delUsuario = mensajes.filter((m) => m.rol === "usuario").map((m) => m.texto);
   // La pregunta actual más la anterior, para entender seguimientos como «¿y cuánto cuesta?».
   const consulta = delUsuario.slice(-2).join("\n").slice(0, 1500);
-  const fichas = await recuperar(consulta, 6);
+  // 5 fichas: suficiente contexto con un prompt más ligero (el modelo empieza a responder antes).
+  const fichas = await recuperar(consulta, 5);
 
   const contexto = fichas.length
     ? fichas.map(fichaTramite).join("\n\n")

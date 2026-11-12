@@ -179,7 +179,7 @@ export function fichaTramite(t: Tramite) {
     `Sector: ${t.sector} · Modalidad: ${t.modalidad}`,
     t.objetivo && `Descripción: ${t.objetivo}`,
     t.aplicaA && `A quién aplica: ${t.aplicaA}`,
-    t.requisitos && `Requisitos:\n${t.requisitos.slice(0, 2200)}${t.requisitos.length > 2200 ? "\n[…lista completa en el portal]" : ""}`,
+    t.requisitos && `Requisitos:\n${t.requisitos.slice(0, 1800)}${t.requisitos.length > 1800 ? "\n[…lista completa en el portal]" : ""}`,
     t.documentos && `Datos y documentos adicionales: ${t.documentos.slice(0, 600)}`,
     `Costo: ${t.costo || "No especificado"}`,
     t.plazo && `Plazo de respuesta: ${t.plazo.slice(0, 300)}`,
