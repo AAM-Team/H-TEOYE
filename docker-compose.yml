@@ -8,9 +8,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-h_teoye}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - h-teoye_hteoye-datos:/var/lib/postgresql/data
+      - hteoye-postgres-data:/var/lib/postgresql/data
 
   app:
     build: .
@@ -24,4 +24,4 @@ services:
       - db
 
 volumes:
-  h-teoye_hteoye-datos:
+  hteoye-postgres-data:

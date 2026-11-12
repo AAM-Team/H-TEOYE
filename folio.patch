@@ -1,0 +1,581 @@
+diff --git a/prisma/schema.prisma b/prisma/schema.prisma
+index 3773ecf..819b232 100644
+--- a/prisma/schema.prisma
++++ b/prisma/schema.prisma
+@@ -128,6 +128,10 @@ model Evaluacion {
+   comentarioRevisadoPorId String?
+   comentarioRevisadoEn    DateTime?
+ 
++  /// Folio del trámite o servicio, tal cual lo da la dependencia (normalizado a mayúsculas).
++  /// Obligatorio: permite a la dependencia verificar la evaluación. Uno por evaluación en cada dependencia.
++  /// Dato sensible: sólo se muestra en el panel institucional, nunca en el portal público.
++  folio     String
+   esDemo    Boolean  @default(false)
+   createdAt DateTime @default(now())
+ 
+@@ -138,6 +142,8 @@ model Evaluacion {
+   @@index([dependenciaId, createdAt])
+   @@index([tramiteId, createdAt])
+   @@index([estadoComentario])
++
++  @@unique([dependenciaId, folio])
+ }
+ 
+ model AccionMejora {
+diff --git a/prisma/seed.ts b/prisma/seed.ts
+index 3be3faf..d377bf2 100644
+--- a/prisma/seed.ts
++++ b/prisma/seed.ts
+@@ -188,6 +188,8 @@ async function main() {
+         filas.push({
+           tramiteId: t.id,
+           dependenciaId: t.dependenciaId,
++          // Folio ficticio y reconocible como demostrativo (único en todo el conjunto).
++          folio: `DEMO-2026-${String(filas.length + 1).padStart(6, "0")}`,
+           trato: estrella(0.3),
+           claridad: estrella(-0.2),
+           facilidad: estrella(-0.4),
+diff --git a/src/app/(portal)/evaluar/[tramiteId]/page.tsx b/src/app/(portal)/evaluar/[tramiteId]/page.tsx
+index c929258..bdcde22 100644
+--- a/src/app/(portal)/evaluar/[tramiteId]/page.tsx
++++ b/src/app/(portal)/evaluar/[tramiteId]/page.tsx
+@@ -50,7 +50,7 @@ export default async function EvaluarPage({ params }: PageProps<"/evaluar/[trami
+             <Clock className="size-4 text-orange" aria-hidden="true" /> Alrededor de 2 minutos
+           </span>
+           <span className="flex items-center gap-2">
+-            <EyeOff className="size-4 text-orange" aria-hidden="true" /> Anónima: no pedimos datos personales
++            <EyeOff className="size-4 text-orange" aria-hidden="true" /> Confidencial: sólo pedimos el folio del trámite
+           </span>
+         </div>
+       </EncabezadoPagina>
+diff --git a/src/app/(portal)/evaluar/acciones.ts b/src/app/(portal)/evaluar/acciones.ts
+index e31d204..73f023e 100644
+--- a/src/app/(portal)/evaluar/acciones.ts
++++ b/src/app/(portal)/evaluar/acciones.ts
+@@ -3,6 +3,7 @@
+ import { headers } from "next/headers";
+ import { redirect } from "next/navigation";
+ import { revalidatePath } from "next/cache";
++import { Prisma } from "@prisma/client";
+ import { prisma } from "@/lib/prisma";
+ import { consumirCupoCompartido, ipDeEncabezados } from "@/lib/limite-compartido";
+ import { evaluacionSchema, formDataAObjeto } from "@/lib/validaciones/evaluacion";
+@@ -50,22 +51,41 @@ export async function enviarEvaluacion(_previo: EstadoEnvio, formData: FormData)
+ 
+   const comentario = datos.comentario ? redactarDatosPersonales(datos.comentario) : null;
+ 
+-  await prisma.evaluacion.create({
+-    data: {
+-      tramiteId: tramite.id,
+-      dependenciaId: tramite.dependenciaId,
+-      trato: datos.trato,
+-      claridad: datos.claridad,
+-      facilidad: datos.facilidad,
+-      satisfaccion: datos.satisfaccion,
+-      canal: datos.canal ?? null,
+-      problemas: datos.problemas,
+-      pagoIndebido: datos.pagoIndebido ?? null,
+-      comentario: comentario?.texto ?? null,
+-      comentarioRedactado: comentario?.redactado ?? false,
+-      estadoComentario: comentario ? "PENDIENTE" : "SIN_COMENTARIO",
+-    },
++  // Una evaluación por folio en cada dependencia. Se comprueba antes de consumir más recursos,
++  // y la restricción única de la base de datos cubre el caso de dos envíos simultáneos.
++  const folioUsado = {
++    estado: "error" as const,
++    mensaje: "Este folio ya tiene una evaluación registrada. Cada trámite sólo se puede evaluar una vez.",
++    errores: { folio: ["Este folio ya fue evaluado."] },
++  };
++  const existente = await prisma.evaluacion.findUnique({
++    where: { dependenciaId_folio: { dependenciaId: tramite.dependenciaId, folio: datos.folio } },
++    select: { id: true },
+   });
++  if (existente) return folioUsado;
++
++  try {
++    await prisma.evaluacion.create({
++      data: {
++        tramiteId: tramite.id,
++        folio: datos.folio,
++        dependenciaId: tramite.dependenciaId,
++        trato: datos.trato,
++        claridad: datos.claridad,
++        facilidad: datos.facilidad,
++        satisfaccion: datos.satisfaccion,
++        canal: datos.canal ?? null,
++        problemas: datos.problemas,
++        pagoIndebido: datos.pagoIndebido ?? null,
++        comentario: comentario?.texto ?? null,
++        comentarioRedactado: comentario?.redactado ?? false,
++        estadoComentario: comentario ? "PENDIENTE" : "SIN_COMENTARIO",
++      },
++    });
++  } catch (e) {
++    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return folioUsado;
++    throw e;
++  }
+ 
+   revalidatePath("/", "layout");
+   const params = new URLSearchParams({ dependencia: tramite.dependencia.slug });
+diff --git a/src/app/(portal)/metodologia/page.tsx b/src/app/(portal)/metodologia/page.tsx
+index 10e1023..322c306 100644
+--- a/src/app/(portal)/metodologia/page.tsx
++++ b/src/app/(portal)/metodologia/page.tsx
+@@ -76,7 +76,7 @@ const RANGOS = [
+ ];
+ 
+ const RECORRIDO = [
+-  { icono: Eraser, t: "Limpieza automática", d: "Se borran patrones de datos personales: teléfonos, correos, CURP y folios." },
++  { icono: Eraser, t: "Limpieza automática", d: "En los comentarios se borran patrones de datos personales: teléfonos, correos, CURP y números largos." },
+   { icono: Hourglass, t: "Queda pendiente", d: "El comentario no es visible para nadie fuera del equipo autorizado." },
+   { icono: BadgeCheck, t: "Revisión humana", d: "Una persona autorizada lo aprueba o lo rechaza. La decisión queda en bitácora." },
+   { icono: MessageSquareText, t: "Se publica", d: "Sólo los comentarios aprobados pueden mostrarse en el portal." },
+diff --git a/src/app/(portal)/page.tsx b/src/app/(portal)/page.tsx
+index 9918b8c..eac489f 100644
+--- a/src/app/(portal)/page.tsx
++++ b/src/app/(portal)/page.tsx
+@@ -54,7 +54,7 @@ export default async function InicioPage() {
+               Califica tu trámite municipal en <span className="text-orange">2 minutos</span>.
+             </h1>
+             <p style={retraso(140)} className="entrada mt-6 max-w-xl text-lg leading-relaxed text-white/70">
+-              Cuatro preguntas, cinco estrellas y nada de datos personales. Cada respuesta alimenta un tablero
++              El folio de tu trámite, cuatro preguntas y cinco estrellas. Cada respuesta alimenta un tablero
+               público que compara a las cinco dependencias participantes.
+             </p>
+             <div style={retraso(210)} className="entrada mt-8 flex flex-col gap-3 sm:flex-row">
+@@ -178,7 +178,7 @@ export default async function InicioPage() {
+           <div>
+             <ShieldCheck className="size-9 text-orange" aria-hidden="true" />
+             <h2 id="titulo-privacidad" className="mt-5 text-3xl font-semibold sm:text-4xl">
+-              Tu evaluación es anónima.
++              Tu evaluación es confidencial.
+             </h2>
+             <p className="mt-4 leading-relaxed text-white/70">
+               El tablero muestra sólo promedios y porcentajes. Un grupo con menos de cinco evaluaciones no se publica,
+@@ -187,7 +187,7 @@ export default async function InicioPage() {
+           </div>
+           <ul className="grid gap-3 sm:grid-cols-2">
+             {[
+-              { i: EyeOff, t: "Sin datos personales", d: "No pedimos nombre, CURP, correo ni número de expediente." },
++              { i: EyeOff, t: "Sin datos personales", d: "No pedimos nombre, CURP ni correo. Sólo el folio del trámite, que nunca se publica." },
+               { i: MessageSquareText, t: "Comentarios revisados", d: "Se eliminan datos personales y se revisan antes de publicarse." },
+               { i: ShieldCheck, t: "Acceso restringido", d: "Sólo personal autorizado consulta el detalle interno." },
+               { i: ClipboardCheck, t: "Mejoras verificadas", d: "Las acciones de mejora se publican sólo después de validarse." },
+diff --git a/src/app/(portal)/privacidad/page.tsx b/src/app/(portal)/privacidad/page.tsx
+index 7630357..a71d912 100644
+--- a/src/app/(portal)/privacidad/page.tsx
++++ b/src/app/(portal)/privacidad/page.tsx
+@@ -28,13 +28,18 @@ export default function PrivacidadPage() {
+               Si decides responderlas: el canal de atención, los problemas que enfrentaste y si alguien te pidió un
+               pago no oficial.
+             </li>
++            <li>
++              El folio de tu trámite o servicio (obligatorio). Sirve para que la dependencia pueda verificar que la
++              evaluación corresponde a un trámite real y para impedir que un mismo trámite se evalúe más de una vez.
++              Nunca se publica: sólo lo consulta personal autorizado de la dependencia correspondiente.
++            </li>
+             <li>Tu comentario opcional.</li>
+             <li>La fecha y hora del envío.</li>
+           </ul>
+ 
+           <h2>Qué no recopilamos</h2>
+           <ul>
+-            <li>No pedimos nombre, CURP, RFC, correo electrónico, teléfono ni número de expediente o folio.</li>
++            <li>No pedimos nombre, CURP, RFC, correo electrónico ni teléfono.</li>
+             <li>No creamos cuentas para la ciudadanía.</li>
+             <li>
+               No guardamos tu dirección IP. Para evitar envíos abusivos usamos temporalmente una huella cifrada e
+@@ -61,8 +66,8 @@ export default function PrivacidadPage() {
+ 
+           <h2>Esta encuesta no es un canal de denuncia</h2>
+           <p>
+-            Las respuestas son anónimas y sirven para estadística, por lo que no permiten dar seguimiento a un caso
+-            particular. Si deseas presentar una queja o denuncia formal, acude a los canales oficiales del
++            Las respuestas sirven para estadística y no se usan para dar seguimiento a un caso particular, aunque
++            la dependencia pueda relacionar el folio con su trámite. Si deseas presentar una queja o denuncia formal, acude a los canales oficiales del
+             Ayuntamiento de Hermosillo.
+           </p>
+ 
+diff --git a/src/app/api/asistente/route.ts b/src/app/api/asistente/route.ts
+index c59ece4..ab95bf1 100644
+--- a/src/app/api/asistente/route.ts
++++ b/src/app/api/asistente/route.ts
+@@ -67,7 +67,7 @@ const INSTRUCCIONES = `Eres «Sol», el asistente ciudadano de H-TEOYE, la plata
+ 
+ Tus tareas:
+ 1. Orientar sobre los ${TOTAL_TRAMITES} trámites y servicios del Portal de Trámites del Ayuntamiento de Hermosillo (${FUENTE_TRAMITES}): qué son, requisitos, costo, plazos, horarios, domicilio, contacto y si se pueden hacer en línea.
+-2. Invitar a evaluar la atención recibida en H-TEOYE (anónimo, 4 preguntas, unos 2 minutos).
++2. Invitar a evaluar la atención recibida en H-TEOYE (se necesita el folio del trámite; 4 preguntas, unos 2 minutos; cada folio se evalúa una sola vez y el folio nunca se publica).
+ 3. Canalizar quejas, denuncias o reconocimientos a personas servidoras públicas al sistema oficial: ${URL_DENUNCIAS}
+ 
+ Reglas:
+@@ -77,7 +77,7 @@ Reglas:
+ - Si el trámite es en línea, menciona su enlace o HDIGITAL (${URL_HDIGITAL}).
+ - Da enlaces en formato Markdown [texto](url). Para páginas de H-TEOYE usa rutas relativas exactamente como aparecen abajo (p. ej. [Evaluar](/dependencias/tesoreria-municipal)). No uses otros enlaces que no aparezcan en estas instrucciones o en las fichas.
+ - Si la persona ya hizo un trámite de una dependencia evaluable, ofrécele evaluarlo con el enlace directo. Para evaluar en general: [Evaluar un trámite](/dependencias). Resultados públicos: [Ver resultados](/resultados).
+-- Si describe un mal trato, cobro indebido, «mordida», corrupción o abuso de una persona servidora pública, o quiere reconocer a alguien: recomiéndale presentar su queja, denuncia o reconocimiento en [Denuncias Hermosillo](${URL_DENUNCIAS}) y aclara que H-TEOYE es anónimo y no tramita denuncias. Si hay riesgo inmediato, indica llamar al 911.
++- Si describe un mal trato, cobro indebido, «mordida», corrupción o abuso de una persona servidora pública, o quiere reconocer a alguien: recomiéndale presentar su queja, denuncia o reconocimiento en [Denuncias Hermosillo](${URL_DENUNCIAS}) y aclara que H-TEOYE es para evaluar la atención y no tramita denuncias. Si hay riesgo inmediato, indica llamar al 911.
+ - NO pidas datos personales (nombre, CURP, teléfono, correo, domicilio, placas). Si la persona los comparte, recuérdale que no es necesario. Verás «[dato removido]» donde se ocultó un dato personal.
+ - Fuera de tema (no municipal): explica amablemente que sólo ayudas con trámites de Hermosillo, evaluaciones y denuncias.
+ 
+diff --git a/src/app/panel/(interno)/evaluaciones/page.tsx b/src/app/panel/(interno)/evaluaciones/page.tsx
+index 9795ab7..91eeca7 100644
+--- a/src/app/panel/(interno)/evaluaciones/page.tsx
++++ b/src/app/panel/(interno)/evaluaciones/page.tsx
+@@ -36,6 +36,7 @@ export default async function EvaluacionesPanel({ searchParams }: PageProps<"/pa
+     tramiteId: texto(sp.tramite),
+     calificacion: calificacion === "mal" || calificacion === "regular" || calificacion === "bien" ? calificacion : undefined,
+     comentario: sp.comentario === "1",
++    folio: texto(sp.folio)?.trim().toUpperCase().slice(0, 40) || undefined,
+     pagina: Math.max(1, Number.parseInt(texto(sp.pagina) ?? "1", 10) || 1),
+   };
+ 
+@@ -55,6 +56,7 @@ export default async function EvaluacionesPanel({ searchParams }: PageProps<"/pa
+     if (filtros.tramiteId) p.set("tramite", filtros.tramiteId);
+     if (filtros.calificacion) p.set("calificacion", filtros.calificacion);
+     if (filtros.comentario) p.set("comentario", "1");
++    if (filtros.folio) p.set("folio", filtros.folio);
+     p.set("pagina", String(pagina));
+     return `/panel/evaluaciones?${p.toString()}`;
+   };
+@@ -65,7 +67,7 @@ export default async function EvaluacionesPanel({ searchParams }: PageProps<"/pa
+       <header>
+         <h1 className="text-4xl font-semibold text-navy">Evaluaciones</h1>
+         <p className="mt-2 text-muted-foreground">
+-          Respuestas individuales, sin datos personales. {esAdmin ? "Todas las dependencias." : `Sólo ${usuario.dependencia?.nombreCorto}.`}
++          Respuestas individuales con el folio del trámite para verificarlas. {esAdmin ? "Todas las dependencias." : `Sólo ${usuario.dependencia?.nombreCorto}.`}
+         </p>
+       </header>
+ 
+@@ -103,6 +105,18 @@ export default async function EvaluacionesPanel({ searchParams }: PageProps<"/pa
+             <option value="bien">4–5 estrellas (bien)</option>
+           </select>
+         </label>
++        <label className="space-y-1.5 text-sm font-medium text-navy">
++          Folio
++          <input
++            type="search"
++            name="folio"
++            defaultValue={filtros.folio ?? ""}
++            maxLength={40}
++            placeholder="Buscar folio"
++            autoComplete="off"
++            className={cn(selectClase, "font-mono uppercase")}
++          />
++        </label>
+         <label className="flex h-11 cursor-pointer items-center gap-2.5 rounded-xl border border-input bg-card px-3 text-sm font-medium text-navy">
+           <input type="checkbox" name="comentario" value="1" defaultChecked={filtros.comentario} className="size-4 accent-[var(--brand-teal-ink)]" />
+           Sólo con comentario
+@@ -122,7 +136,8 @@ export default async function EvaluacionesPanel({ searchParams }: PageProps<"/pa
+             <div className="flex flex-wrap items-start justify-between gap-3">
+               <div className="min-w-0">
+                 <p className="text-xs text-muted-foreground">
+-                  {fecha.format(e.createdAt)} · {e.dependencia.nombreCorto}
++                  {fecha.format(e.createdAt)} · {e.dependencia.nombreCorto} · Folio{" "}
++                  <span className="font-mono font-semibold text-navy">{e.folio}</span>
+                   {e.canal ? ` · ${CANAL[e.canal]}` : ""}
+                 </p>
+                 <p className="mt-1 font-semibold leading-snug text-navy">{e.tramite.nombre}</p>
+diff --git a/src/components/encuesta/formulario-encuesta.tsx b/src/components/encuesta/formulario-encuesta.tsx
+index 71c99eb..49fe44d 100644
+--- a/src/components/encuesta/formulario-encuesta.tsx
++++ b/src/components/encuesta/formulario-encuesta.tsx
+@@ -1,12 +1,13 @@
+ "use client";
+ 
+ import Link from "next/link";
+-import { useActionState, useEffect, useRef, useState } from "react";
++import { startTransition, useActionState, useEffect, useRef, useState } from "react";
+ import { AlertCircle, Check, Loader2, Lock, Send } from "lucide-react";
+ import { enviarEvaluacion, type EstadoEnvio } from "@/app/(portal)/evaluar/acciones";
+ import { CalificacionEstrellas } from "@/components/encuesta/calificacion-estrellas";
+ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+ import { Button } from "@/components/ui/button";
++import { Input } from "@/components/ui/input";
+ import { Textarea } from "@/components/ui/textarea";
+ import {
+   CANALES,
+@@ -24,6 +25,7 @@ const estadoInicial: EstadoEnvio = { estado: "inicial" };
+ 
+ /** Destino y nombre de cada campo, para enlazar el resumen de errores con el campo a corregir. */
+ const CAMPOS: Record<string, { ancla: string; nombre: string }> = {
++  folio: { ancla: "folio", nombre: "Folio del trámite" },
+   ...Object.fromEntries(DIMENSIONES.map((d) => [d.clave, { ancla: `campo-${d.clave}`, nombre: d.titulo }])),
+   problemas: { ancla: "campo-problemas", nombre: "Problemas que enfrentaste" },
+   comentario: { ancla: "comentario", nombre: "Comentario" },
+@@ -108,21 +110,33 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
+   const [pago, setPago] = useState<string>("");
+   const [comentario, setComentario] = useState("");
+   const [acepta, setAcepta] = useState(false);
++  const [folio, setFolio] = useState("");
++  const [folioConError, setFolioConError] = useState<string | null>(null);
+   const resumenRef = useRef<HTMLDivElement>(null);
+ 
+   const errores = estado.estado === "error" ? estado.errores ?? {} : {};
+   // Cada error desaparece en cuanto la persona corrige el campo.
+   const errorPrivacidad = acepta ? undefined : errores.aceptaPrivacidad?.[0];
++  // El error del folio se oculta en cuanto la persona cambia el folio que causó el error.
++  const errorFolio = folio === folioConError ? errores.folio?.[0] : undefined;
++  const folioListo = folio.trim().length >= 4;
+   const valores = Object.values(calificaciones).filter((v): v is number => v != null);
+   const completas = valores.length;
+   const tuPromedio = completas ? valores.reduce((a, b) => a + b, 0) / completas : null;
+   const opcionales = [canal, problemas.length ? "x" : "", pago, comentario.trim()].filter(Boolean).length;
+-  const listo = completas === 4 && acepta;
++  const listo = folioListo && completas === 4 && acepta;
+ 
+   useEffect(() => {
+     if (estado.estado === "error") resumenRef.current?.focus();
+   }, [estado]);
+ 
++  // Recuerda con qué folio se produjo el error, para mostrarlo hasta que lo corrija.
++  const [estadoVisto, setEstadoVisto] = useState(estado);
++  if (estado !== estadoVisto) {
++    setEstadoVisto(estado);
++    setFolioConError(estado.estado === "error" && estado.errores?.folio ? folio : null);
++  }
++
+   function alternarProblema(valor: string) {
+     setProblemas((actual) => {
+       if (valor === PROBLEMA_NINGUNO.valor) return actual.includes(valor) ? [] : [valor];
+@@ -132,6 +146,7 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
+   }
+ 
+   const pasos = [
++    { ancla: "folio", titulo: "Folio del trámite", hecho: folioListo },
+     ...DIMENSIONES.map((d) => ({ ancla: `campo-${d.clave}`, titulo: d.titulo, hecho: calificaciones[d.clave] != null })),
+     { ancla: "titulo-adicional", titulo: `Detalles opcionales (${opcionales} de 4)`, hecho: opcionales > 0, opcional: true },
+     { ancla: "acepta-privacidad", titulo: "Aviso de privacidad", hecho: acepta },
+@@ -139,7 +154,17 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
+   const color = colorCalificacion(tuPromedio);
+ 
+   return (
+-    <form action={accion} noValidate className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
++    <form
++      action={accion}
++      // Con JavaScript se envía manualmente: así React no vacía el formulario cuando el servidor
++      // rechaza el envío (p. ej. folio repetido) y la persona no pierde sus respuestas.
++      onSubmit={(e) => {
++        e.preventDefault();
++        const datos = new FormData(e.currentTarget);
++        startTransition(() => accion(datos));
++      }}
++      noValidate
++      className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+       <input type="hidden" name="tramiteId" value={tramiteId} />
+       {/* Campo trampa para bots */}
+       <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
+@@ -175,6 +200,47 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
+           </div>
+         )}
+ 
++        <Seccion
++          id="titulo-folio"
++          numero="Obligatorio"
++          titulo={
++            <>
++              Folio de tu trámite <span className="sr-only">(obligatorio)</span>
++            </>
++          }
++          descripcion="Lo encuentras en tu comprobante, recibo, solicitud o en el correo de confirmación del trámite."
++        >
++          <label htmlFor="folio" className="font-semibold text-navy">
++            Folio del trámite o servicio <span className="text-destructive" aria-hidden="true">*</span>
++          </label>
++          <p id="ayuda-folio" className="mt-1 text-sm text-muted-foreground">
++            Escríbelo tal como aparece (por ejemplo, HMO-2026-001234). Cada folio sólo se puede evaluar una vez. La
++            dependencia puede usarlo para verificar tu evaluación; nunca se publica.
++          </p>
++          <Input
++            id="folio"
++            name="folio"
++            value={folio}
++            onChange={(e) => setFolio(e.target.value.toUpperCase())}
++            required
++            minLength={4}
++            maxLength={40}
++            autoComplete="off"
++            autoCapitalize="characters"
++            spellCheck={false}
++            placeholder="Ej. HMO-2026-001234"
++            aria-required="true"
++            aria-invalid={errorFolio ? true : undefined}
++            aria-describedby={`ayuda-folio${errorFolio ? " error-folio" : ""}`}
++            className="mt-3 h-12 max-w-md rounded-2xl bg-muted/40 px-4 font-mono text-base tracking-wide uppercase focus-visible:bg-card"
++          />
++          {errorFolio && (
++            <p id="error-folio" className="mt-2 text-sm font-medium text-destructive">
++              {errorFolio}
++            </p>
++          )}
++        </Seccion>
++
+         <Seccion
+           id="titulo-calificaciones"
+           numero="Obligatorio"
+@@ -318,7 +384,7 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
+                 aviso de privacidad
+                 <span className="sr-only"> (se abre en una pestaña nueva)</span>
+               </Link>{" "}
+-              y entiendo que mi evaluación es voluntaria y anónima. <span className="text-destructive" aria-hidden="true">*</span>
++              y entiendo que mi evaluación es voluntaria y que el folio sólo se usa para verificarla y evitar duplicados. <span className="text-destructive" aria-hidden="true">*</span>
+             </span>
+           </label>
+           {errorPrivacidad && (
+@@ -328,7 +394,7 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
+           )}
+           <div className="mt-6 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+             <p className="flex items-center gap-2 text-xs text-muted-foreground">
+-              <Lock className="size-3.5" aria-hidden="true" /> No guardamos tu IP ni datos que te identifiquen.
++              <Lock className="size-3.5" aria-hidden="true" /> No guardamos tu IP. El folio no se publica.
+             </p>
+             <Button type="submit" size="lg" className="rounded-full px-7" disabled={enviando} aria-busy={enviando || undefined}>
+               {enviando ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
+@@ -380,7 +446,7 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
+                 : listo
+                   ? "Enviar evaluación"
+                   : (() => {
+-                      const faltan = 4 - completas + (acepta ? 0 : 1);
++                      const faltan = 4 - completas + (acepta ? 0 : 1) + (folioListo ? 0 : 1);
+                       return `${faltan === 1 ? "Falta 1 paso" : `Faltan ${faltan} pasos`}`;
+                     })()}
+             </Button>
+diff --git a/src/lib/consultas/panel.ts b/src/lib/consultas/panel.ts
+index e7996e5..29f52fb 100644
+--- a/src/lib/consultas/panel.ts
++++ b/src/lib/consultas/panel.ts
+@@ -144,6 +144,8 @@ export type FiltrosEvaluaciones = {
+   tramiteId?: string;
+   calificacion?: "mal" | "regular" | "bien";
+   comentario?: boolean;
++  /** Búsqueda por folio (exacto o parcial, sin distinguir mayúsculas). */
++  folio?: string;
+   pagina: number;
+ };
+ 
+@@ -158,6 +160,7 @@ export async function listarEvaluaciones(alcanceUsuario: Alcance, f: FiltrosEval
+     ...(f.calificacion === "regular" ? { satisfaccion: 3 } : {}),
+     ...(f.calificacion === "bien" ? { satisfaccion: { gte: 4 } } : {}),
+     ...(f.comentario ? { comentario: { not: null } } : {}),
++    ...(f.folio ? { folio: { contains: f.folio, mode: "insensitive" as const } } : {}),
+   };
+   const [total, filas] = await Promise.all([
+     prisma.evaluacion.count({ where }),
+@@ -168,6 +171,7 @@ export async function listarEvaluaciones(alcanceUsuario: Alcance, f: FiltrosEval
+       take: POR_PAGINA,
+       select: {
+         id: true,
++        folio: true,
+         createdAt: true,
+         trato: true,
+         claridad: true,
+diff --git a/src/lib/validaciones/evaluacion.ts b/src/lib/validaciones/evaluacion.ts
+index 05fd96a..366f630 100644
+--- a/src/lib/validaciones/evaluacion.ts
++++ b/src/lib/validaciones/evaluacion.ts
+@@ -7,10 +7,29 @@ const estrellas = z.coerce
+   .min(1, { error: "Selecciona una calificación de 1 a 5 estrellas." })
+   .max(5, { error: "Selecciona una calificación de 1 a 5 estrellas." });
+ 
++/**
++ * Folio del trámite o servicio. No hay un formato único entre dependencias (p. ej. «HMO-2026-001234»,
++ * «DGODU-AC-1520/2026»), así que sólo se exige una forma razonable: 4 a 40 caracteres entre letras,
++ * números, guiones, diagonales y puntos, empezando y terminando en letra o número.
++ * Se normaliza a mayúsculas para que «abc-12» y «ABC-12» cuenten como el mismo folio.
++ */
++export const folioSchema = z.preprocess(
++  (v) => (typeof v === "string" ? v.trim().toUpperCase() : v),
++  z
++    .string({ error: "Escribe el folio de tu trámite." })
++    .min(1, { error: "Escribe el folio de tu trámite." })
++    .min(4, { error: "El folio debe tener al menos 4 caracteres." })
++    .max(40, { error: "El folio no puede superar 40 caracteres." })
++    .regex(/^[A-Z0-9Ñ](?:[A-Z0-9Ñ./-]*[A-Z0-9Ñ])?$/, {
++      error: "Usa sólo letras, números, guiones (-), diagonales (/) o puntos, sin espacios.",
++    }),
++);
++
+ const vacioAIndefinido = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
+ 
+ export const evaluacionSchema = z.object({
+   tramiteId: z.string().min(1).max(40),
++  folio: folioSchema,
+   trato: estrellas,
+   claridad: estrellas,
+   facilidad: estrellas,
+@@ -57,6 +76,7 @@ export type EvaluacionEntrada = z.infer<typeof evaluacionSchema>;
+ export function formDataAObjeto(fd: FormData) {
+   const campos = [
+     "tramiteId",
++    "folio",
+     "trato",
+     "claridad",
+     "facilidad",
+diff --git a/tests/validacion-evaluacion.test.ts b/tests/validacion-evaluacion.test.ts
+index 5e05cf5..2868875 100644
+--- a/tests/validacion-evaluacion.test.ts
++++ b/tests/validacion-evaluacion.test.ts
+@@ -9,6 +9,7 @@ function fd(campos: Record<string, string | string[]>) {
+ 
+ const valido = {
+   tramiteId: "ckxyz123",
++  folio: "HMO-2026-001234",
+   trato: "5",
+   claridad: "4",
+   facilidad: "3",
+@@ -16,6 +17,34 @@ const valido = {
+   aceptaPrivacidad: "on",
+ };
+ 
++describe("folio del trámite", () => {
++  it("es obligatorio", () => {
++    const { folio: _omitido, ...sinFolio } = valido;
++    void _omitido;
++    const r = evaluacionSchema.safeParse(fd(sinFolio));
++    expect(r.success).toBe(false);
++    if (!r.success) expect(r.error.issues.some((i) => i.path[0] === "folio")).toBe(true);
++  });
++
++  it("se normaliza a mayúsculas y sin espacios en los extremos", () => {
++    const r = evaluacionSchema.safeParse(fd({ ...valido, folio: "  dgodu-ac-1520/2026 " }));
++    expect(r.success).toBe(true);
++    if (r.success) expect(r.data.folio).toBe("DGODU-AC-1520/2026");
++  });
++
++  it("acepta formatos variados de las dependencias", () => {
++    for (const folio of ["DCM-P302-F03-LDT", "DGODU-AC", "12345", "TES.2026.88", "A1B2"]) {
++      expect(evaluacionSchema.safeParse(fd({ ...valido, folio })).success, folio).toBe(true);
++    }
++  });
++
++  it("rechaza folios cortos, largos, con espacios o símbolos", () => {
++    for (const folio of ["", "AB1", "A".repeat(41), "HMO 2026 1", "-HMO-1", "HMO-1-", "FOLIO#12", "<script>"]) {
++      expect(evaluacionSchema.safeParse(fd({ ...valido, folio })).success, folio).toBe(false);
++    }
++  });
++});
++
+ describe("evaluacionSchema", () => {
+   it("acepta una evaluación mínima válida", () => {
+     const r = evaluacionSchema.safeParse(fd(valido));
+diff --git a/prisma/migrations/20261113000000_folio_evaluacion/migration.sql b/prisma/migrations/20261113000000_folio_evaluacion/migration.sql
+new file mode 100644
+index 0000000..caecac9
+--- /dev/null
++++ b/prisma/migrations/20261113000000_folio_evaluacion/migration.sql
+@@ -0,0 +1,15 @@
++-- Folio obligatorio del trámite en cada evaluación (una evaluación por folio en cada dependencia).
++
++-- 1. Columna nueva, temporalmente opcional.
++ALTER TABLE "Evaluacion" ADD COLUMN "folio" TEXT;
++
++-- 2. Las evaluaciones que ya existían reciben un folio ficticio identificable: DEMO-AAAA-XXXXXXXX.
++UPDATE "Evaluacion"
++SET "folio" = 'DEMO-' || to_char("createdAt", 'YYYY') || '-' || upper(substr(md5("id"), 1, 8))
++WHERE "folio" IS NULL;
++
++-- 3. Obligatoria y única por dependencia.
++ALTER TABLE "Evaluacion" ALTER COLUMN "folio" SET NOT NULL;
++
++-- CreateIndex
++CREATE UNIQUE INDEX "Evaluacion_dependenciaId_folio_key" ON "Evaluacion"("dependenciaId", "folio");

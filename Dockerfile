@@ -5,7 +5,7 @@ RUN apk add --no-cache libc6-compat
 
 COPY . .
 
-RUN corepack enable && pnpm install --frozen-lockfile --config.minimum-release-age=0 --ignore-scripts
+RUN corepack enable && pnpm install --no-frozen-lockfile --config.minimum-release-age=0 --ignore-scripts
 
 RUN npx prisma generate
 

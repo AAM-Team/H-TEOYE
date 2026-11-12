@@ -1,0 +1,9 @@
+node_modules
+.next
+.next-production
+.git
+.local
+*.log
+.env.local
+.env*.local
+

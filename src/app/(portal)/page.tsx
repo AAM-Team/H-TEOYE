@@ -54,7 +54,7 @@ export default async function InicioPage() {
               Califica tu trámite municipal en <span className="text-orange">2 minutos</span>.
             </h1>
             <p style={retraso(140)} className="entrada mt-6 max-w-xl text-lg leading-relaxed text-white/70">
-              Cuatro preguntas, cinco estrellas y nada de datos personales. Cada respuesta alimenta un tablero
+              El folio de tu trámite, cuatro preguntas y cinco estrellas. Cada respuesta alimenta un tablero
               público que compara a las cinco dependencias participantes.
             </p>
             <div style={retraso(210)} className="entrada mt-8 flex flex-col gap-3 sm:flex-row">
@@ -178,7 +178,7 @@ export default async function InicioPage() {
           <div>
             <ShieldCheck className="size-9 text-orange" aria-hidden="true" />
             <h2 id="titulo-privacidad" className="mt-5 text-3xl font-semibold sm:text-4xl">
-              Tu evaluación es anónima.
+              Tu evaluación es confidencial.
             </h2>
             <p className="mt-4 leading-relaxed text-white/70">
               El tablero muestra sólo promedios y porcentajes. Un grupo con menos de cinco evaluaciones no se publica,
@@ -187,7 +187,7 @@ export default async function InicioPage() {
           </div>
           <ul className="grid gap-3 sm:grid-cols-2">
             {[
-              { i: EyeOff, t: "Sin datos personales", d: "No pedimos nombre, CURP, correo ni número de expediente." },
+              { i: EyeOff, t: "Sin datos personales", d: "No pedimos nombre, CURP ni correo. Sólo el folio del trámite, que nunca se publica." },
               { i: MessageSquareText, t: "Comentarios revisados", d: "Se eliminan datos personales y se revisan antes de publicarse." },
               { i: ShieldCheck, t: "Acceso restringido", d: "Sólo personal autorizado consulta el detalle interno." },
               { i: ClipboardCheck, t: "Mejoras verificadas", d: "Las acciones de mejora se publican sólo después de validarse." },

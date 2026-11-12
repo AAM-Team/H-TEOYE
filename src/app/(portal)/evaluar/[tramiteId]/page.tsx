@@ -50,7 +50,7 @@ export default async function EvaluarPage({ params }: PageProps<"/evaluar/[trami
             <Clock className="size-4 text-orange" aria-hidden="true" /> Alrededor de 2 minutos
           </span>
           <span className="flex items-center gap-2">
-            <EyeOff className="size-4 text-orange" aria-hidden="true" /> Anónima: no pedimos datos personales
+            <EyeOff className="size-4 text-orange" aria-hidden="true" /> Confidencial: sólo pedimos el folio del trámite
           </span>
         </div>
       </EncabezadoPagina>

@@ -28,13 +28,18 @@ export default function PrivacidadPage() {
               Si decides responderlas: el canal de atención, los problemas que enfrentaste y si alguien te pidió un
               pago no oficial.
             </li>
+            <li>
+              El folio de tu trámite o servicio (obligatorio). Sirve para que la dependencia pueda verificar que la
+              evaluación corresponde a un trámite real y para impedir que un mismo trámite se evalúe más de una vez.
+              Nunca se publica: sólo lo consulta personal autorizado de la dependencia correspondiente.
+            </li>
             <li>Tu comentario opcional.</li>
             <li>La fecha y hora del envío.</li>
           </ul>
 
           <h2>Qué no recopilamos</h2>
           <ul>
-            <li>No pedimos nombre, CURP, RFC, correo electrónico, teléfono ni número de expediente o folio.</li>
+            <li>No pedimos nombre, CURP, RFC, correo electrónico ni teléfono.</li>
             <li>No creamos cuentas para la ciudadanía.</li>
             <li>
               No guardamos tu dirección IP. Para evitar envíos abusivos usamos temporalmente una huella cifrada e
@@ -61,8 +66,8 @@ export default function PrivacidadPage() {
 
           <h2>Esta encuesta no es un canal de denuncia</h2>
           <p>
-            Las respuestas son anónimas y sirven para estadística, por lo que no permiten dar seguimiento a un caso
-            particular. Si deseas presentar una queja o denuncia formal, acude a los canales oficiales del
+            Las respuestas sirven para estadística y no se usan para dar seguimiento a un caso particular, aunque
+            la dependencia pueda relacionar el folio con su trámite. Si deseas presentar una queja o denuncia formal, acude a los canales oficiales del
             Ayuntamiento de Hermosillo.
           </p>
 

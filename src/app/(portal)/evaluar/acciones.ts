@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { consumirCupoCompartido, ipDeEncabezados } from "@/lib/limite-compartido";
 import { evaluacionSchema, formDataAObjeto } from "@/lib/validaciones/evaluacion";
@@ -50,22 +51,41 @@ export async function enviarEvaluacion(_previo: EstadoEnvio, formData: FormData)
 
   const comentario = datos.comentario ? redactarDatosPersonales(datos.comentario) : null;
 
-  await prisma.evaluacion.create({
-    data: {
-      tramiteId: tramite.id,
-      dependenciaId: tramite.dependenciaId,
-      trato: datos.trato,
-      claridad: datos.claridad,
-      facilidad: datos.facilidad,
-      satisfaccion: datos.satisfaccion,
-      canal: datos.canal ?? null,
-      problemas: datos.problemas,
-      pagoIndebido: datos.pagoIndebido ?? null,
-      comentario: comentario?.texto ?? null,
-      comentarioRedactado: comentario?.redactado ?? false,
-      estadoComentario: comentario ? "PENDIENTE" : "SIN_COMENTARIO",
-    },
+  // Una evaluación por folio en cada dependencia. Se comprueba antes de consumir más recursos,
+  // y la restricción única de la base de datos cubre el caso de dos envíos simultáneos.
+  const folioUsado = {
+    estado: "error" as const,
+    mensaje: "Este folio ya tiene una evaluación registrada. Cada trámite sólo se puede evaluar una vez.",
+    errores: { folio: ["Este folio ya fue evaluado."] },
+  };
+  const existente = await prisma.evaluacion.findUnique({
+    where: { dependenciaId_folio: { dependenciaId: tramite.dependenciaId, folio: datos.folio } },
+    select: { id: true },
   });
+  if (existente) return folioUsado;
+
+  try {
+    await prisma.evaluacion.create({
+      data: {
+        tramiteId: tramite.id,
+        folio: datos.folio,
+        dependenciaId: tramite.dependenciaId,
+        trato: datos.trato,
+        claridad: datos.claridad,
+        facilidad: datos.facilidad,
+        satisfaccion: datos.satisfaccion,
+        canal: datos.canal ?? null,
+        problemas: datos.problemas,
+        pagoIndebido: datos.pagoIndebido ?? null,
+        comentario: comentario?.texto ?? null,
+        comentarioRedactado: comentario?.redactado ?? false,
+        estadoComentario: comentario ? "PENDIENTE" : "SIN_COMENTARIO",
+      },
+    });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") return folioUsado;
+    throw e;
+  }
 
   revalidatePath("/", "layout");
   const params = new URLSearchParams({ dependencia: tramite.dependencia.slug });

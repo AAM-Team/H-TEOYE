@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { AlertCircle, Check, Loader2, Lock, Send } from "lucide-react";
 import { enviarEvaluacion, type EstadoEnvio } from "@/app/(portal)/evaluar/acciones";
 import { CalificacionEstrellas } from "@/components/encuesta/calificacion-estrellas";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   CANALES,
@@ -24,6 +25,7 @@ const estadoInicial: EstadoEnvio = { estado: "inicial" };
 
 /** Destino y nombre de cada campo, para enlazar el resumen de errores con el campo a corregir. */
 const CAMPOS: Record<string, { ancla: string; nombre: string }> = {
+  folio: { ancla: "folio", nombre: "Folio del trámite" },
   ...Object.fromEntries(DIMENSIONES.map((d) => [d.clave, { ancla: `campo-${d.clave}`, nombre: d.titulo }])),
   problemas: { ancla: "campo-problemas", nombre: "Problemas que enfrentaste" },
   comentario: { ancla: "comentario", nombre: "Comentario" },
@@ -108,20 +110,32 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
   const [pago, setPago] = useState<string>("");
   const [comentario, setComentario] = useState("");
   const [acepta, setAcepta] = useState(false);
+  const [folio, setFolio] = useState("");
+  const [folioConError, setFolioConError] = useState<string | null>(null);
   const resumenRef = useRef<HTMLDivElement>(null);
 
   const errores = estado.estado === "error" ? estado.errores ?? {} : {};
   // Cada error desaparece en cuanto la persona corrige el campo.
   const errorPrivacidad = acepta ? undefined : errores.aceptaPrivacidad?.[0];
+  // El error del folio se oculta en cuanto la persona cambia el folio que causó el error.
+  const errorFolio = folio === folioConError ? errores.folio?.[0] : undefined;
+  const folioListo = folio.trim().length >= 4;
   const valores = Object.values(calificaciones).filter((v): v is number => v != null);
   const completas = valores.length;
   const tuPromedio = completas ? valores.reduce((a, b) => a + b, 0) / completas : null;
   const opcionales = [canal, problemas.length ? "x" : "", pago, comentario.trim()].filter(Boolean).length;
-  const listo = completas === 4 && acepta;
+  const listo = folioListo && completas === 4 && acepta;
 
   useEffect(() => {
     if (estado.estado === "error") resumenRef.current?.focus();
   }, [estado]);
+
+  // Recuerda con qué folio se produjo el error, para mostrarlo hasta que lo corrija.
+  const [estadoVisto, setEstadoVisto] = useState(estado);
+  if (estado !== estadoVisto) {
+    setEstadoVisto(estado);
+    setFolioConError(estado.estado === "error" && estado.errores?.folio ? folio : null);
+  }
 
   function alternarProblema(valor: string) {
     setProblemas((actual) => {
@@ -132,6 +146,7 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
   }
 
   const pasos = [
+    { ancla: "folio", titulo: "Folio del trámite", hecho: folioListo },
     ...DIMENSIONES.map((d) => ({ ancla: `campo-${d.clave}`, titulo: d.titulo, hecho: calificaciones[d.clave] != null })),
     { ancla: "titulo-adicional", titulo: `Detalles opcionales (${opcionales} de 4)`, hecho: opcionales > 0, opcional: true },
     { ancla: "acepta-privacidad", titulo: "Aviso de privacidad", hecho: acepta },
@@ -139,7 +154,17 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
   const color = colorCalificacion(tuPromedio);
 
   return (
-    <form action={accion} noValidate className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+    <form
+      action={accion}
+      // Con JavaScript se envía manualmente: así React no vacía el formulario cuando el servidor
+      // rechaza el envío (p. ej. folio repetido) y la persona no pierde sus respuestas.
+      onSubmit={(e) => {
+        e.preventDefault();
+        const datos = new FormData(e.currentTarget);
+        startTransition(() => accion(datos));
+      }}
+      noValidate
+      className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
       <input type="hidden" name="tramiteId" value={tramiteId} />
       {/* Campo trampa para bots */}
       <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
@@ -174,6 +199,47 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
             </Alert>
           </div>
         )}
+
+        <Seccion
+          id="titulo-folio"
+          numero="Obligatorio"
+          titulo={
+            <>
+              Folio de tu trámite <span className="sr-only">(obligatorio)</span>
+            </>
+          }
+          descripcion="Lo encuentras en tu comprobante, recibo, solicitud o en el correo de confirmación del trámite."
+        >
+          <label htmlFor="folio" className="font-semibold text-navy">
+            Folio del trámite o servicio <span className="text-destructive" aria-hidden="true">*</span>
+          </label>
+          <p id="ayuda-folio" className="mt-1 text-sm text-muted-foreground">
+            Escríbelo tal como aparece (por ejemplo, HMO-2026-001234). Cada folio sólo se puede evaluar una vez. La
+            dependencia puede usarlo para verificar tu evaluación; nunca se publica.
+          </p>
+          <Input
+            id="folio"
+            name="folio"
+            value={folio}
+            onChange={(e) => setFolio(e.target.value.toUpperCase())}
+            required
+            minLength={4}
+            maxLength={40}
+            autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            placeholder="Ej. HMO-2026-001234"
+            aria-required="true"
+            aria-invalid={errorFolio ? true : undefined}
+            aria-describedby={`ayuda-folio${errorFolio ? " error-folio" : ""}`}
+            className="mt-3 h-12 max-w-md rounded-2xl bg-muted/40 px-4 font-mono text-base tracking-wide uppercase focus-visible:bg-card"
+          />
+          {errorFolio && (
+            <p id="error-folio" className="mt-2 text-sm font-medium text-destructive">
+              {errorFolio}
+            </p>
+          )}
+        </Seccion>
 
         <Seccion
           id="titulo-calificaciones"
@@ -318,7 +384,7 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
                 aviso de privacidad
                 <span className="sr-only"> (se abre en una pestaña nueva)</span>
               </Link>{" "}
-              y entiendo que mi evaluación es voluntaria y anónima. <span className="text-destructive" aria-hidden="true">*</span>
+              y entiendo que mi evaluación es voluntaria y que el folio sólo se usa para verificarla y evitar duplicados. <span className="text-destructive" aria-hidden="true">*</span>
             </span>
           </label>
           {errorPrivacidad && (
@@ -328,7 +394,7 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
           )}
           <div className="mt-6 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Lock className="size-3.5" aria-hidden="true" /> No guardamos tu IP ni datos que te identifiquen.
+              <Lock className="size-3.5" aria-hidden="true" /> No guardamos tu IP. El folio no se publica.
             </p>
             <Button type="submit" size="lg" className="rounded-full px-7" disabled={enviando} aria-busy={enviando || undefined}>
               {enviando ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}
@@ -380,7 +446,7 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
                 : listo
                   ? "Enviar evaluación"
                   : (() => {
-                      const faltan = 4 - completas + (acepta ? 0 : 1);
+                      const faltan = 4 - completas + (acepta ? 0 : 1) + (folioListo ? 0 : 1);
                       return `${faltan === 1 ? "Falta 1 paso" : `Faltan ${faltan} pasos`}`;
                     })()}
             </Button>

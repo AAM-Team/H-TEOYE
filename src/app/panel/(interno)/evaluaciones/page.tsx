@@ -36,6 +36,7 @@ export default async function EvaluacionesPanel({ searchParams }: PageProps<"/pa
     tramiteId: texto(sp.tramite),
     calificacion: calificacion === "mal" || calificacion === "regular" || calificacion === "bien" ? calificacion : undefined,
     comentario: sp.comentario === "1",
+    folio: texto(sp.folio)?.trim().toUpperCase().slice(0, 40) || undefined,
     pagina: Math.max(1, Number.parseInt(texto(sp.pagina) ?? "1", 10) || 1),
   };
 
@@ -55,6 +56,7 @@ export default async function EvaluacionesPanel({ searchParams }: PageProps<"/pa
     if (filtros.tramiteId) p.set("tramite", filtros.tramiteId);
     if (filtros.calificacion) p.set("calificacion", filtros.calificacion);
     if (filtros.comentario) p.set("comentario", "1");
+    if (filtros.folio) p.set("folio", filtros.folio);
     p.set("pagina", String(pagina));
     return `/panel/evaluaciones?${p.toString()}`;
   };
@@ -65,7 +67,7 @@ export default async function EvaluacionesPanel({ searchParams }: PageProps<"/pa
       <header>
         <h1 className="text-4xl font-semibold text-navy">Evaluaciones</h1>
         <p className="mt-2 text-muted-foreground">
-          Respuestas individuales, sin datos personales. {esAdmin ? "Todas las dependencias." : `Sólo ${usuario.dependencia?.nombreCorto}.`}
+          Respuestas individuales con el folio del trámite para verificarlas. {esAdmin ? "Todas las dependencias." : `Sólo ${usuario.dependencia?.nombreCorto}.`}
         </p>
       </header>
 
@@ -103,6 +105,18 @@ export default async function EvaluacionesPanel({ searchParams }: PageProps<"/pa
             <option value="bien">4–5 estrellas (bien)</option>
           </select>
         </label>
+        <label className="space-y-1.5 text-sm font-medium text-navy">
+          Folio
+          <input
+            type="search"
+            name="folio"
+            defaultValue={filtros.folio ?? ""}
+            maxLength={40}
+            placeholder="Buscar folio"
+            autoComplete="off"
+            className={cn(selectClase, "font-mono uppercase")}
+          />
+        </label>
         <label className="flex h-11 cursor-pointer items-center gap-2.5 rounded-xl border border-input bg-card px-3 text-sm font-medium text-navy">
           <input type="checkbox" name="comentario" value="1" defaultChecked={filtros.comentario} className="size-4 accent-[var(--brand-teal-ink)]" />
           Sólo con comentario
@@ -122,7 +136,8 @@ export default async function EvaluacionesPanel({ searchParams }: PageProps<"/pa
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">
-                  {fecha.format(e.createdAt)} · {e.dependencia.nombreCorto}
+                  {fecha.format(e.createdAt)} · {e.dependencia.nombreCorto} · Folio{" "}
+                  <span className="font-mono font-semibold text-navy">{e.folio}</span>
                   {e.canal ? ` · ${CANAL[e.canal]}` : ""}
                 </p>
                 <p className="mt-1 font-semibold leading-snug text-navy">{e.tramite.nombre}</p>

@@ -144,6 +144,8 @@ export type FiltrosEvaluaciones = {
   tramiteId?: string;
   calificacion?: "mal" | "regular" | "bien";
   comentario?: boolean;
+  /** Búsqueda por folio (exacto o parcial, sin distinguir mayúsculas). */
+  folio?: string;
   pagina: number;
 };
 
@@ -158,6 +160,7 @@ export async function listarEvaluaciones(alcanceUsuario: Alcance, f: FiltrosEval
     ...(f.calificacion === "regular" ? { satisfaccion: 3 } : {}),
     ...(f.calificacion === "bien" ? { satisfaccion: { gte: 4 } } : {}),
     ...(f.comentario ? { comentario: { not: null } } : {}),
+    ...(f.folio ? { folio: { contains: f.folio, mode: "insensitive" as const } } : {}),
   };
   const [total, filas] = await Promise.all([
     prisma.evaluacion.count({ where }),
@@ -168,6 +171,7 @@ export async function listarEvaluaciones(alcanceUsuario: Alcance, f: FiltrosEval
       take: POR_PAGINA,
       select: {
         id: true,
+        folio: true,
         createdAt: true,
         trato: true,
         claridad: true,

@@ -76,7 +76,7 @@ const RANGOS = [
 ];
 
 const RECORRIDO = [
-  { icono: Eraser, t: "Limpieza automática", d: "Se borran patrones de datos personales: teléfonos, correos, CURP y folios." },
+  { icono: Eraser, t: "Limpieza automática", d: "En los comentarios se borran patrones de datos personales: teléfonos, correos, CURP y números largos." },
   { icono: Hourglass, t: "Queda pendiente", d: "El comentario no es visible para nadie fuera del equipo autorizado." },
   { icono: BadgeCheck, t: "Revisión humana", d: "Una persona autorizada lo aprueba o lo rechaza. La decisión queda en bitácora." },
   { icono: MessageSquareText, t: "Se publica", d: "Sólo los comentarios aprobados pueden mostrarse en el portal." },

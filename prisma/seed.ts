@@ -188,6 +188,8 @@ async function main() {
         filas.push({
           tramiteId: t.id,
           dependenciaId: t.dependenciaId,
+          // Folio ficticio y reconocible como demostrativo (único en todo el conjunto).
+          folio: `DEMO-2026-${String(filas.length + 1).padStart(6, "0")}`,
           trato: estrella(0.3),
           claridad: estrella(-0.2),
           facilidad: estrella(-0.4),

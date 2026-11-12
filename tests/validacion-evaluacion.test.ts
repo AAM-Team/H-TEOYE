@@ -9,12 +9,41 @@ function fd(campos: Record<string, string | string[]>) {
 
 const valido = {
   tramiteId: "ckxyz123",
+  folio: "HMO-2026-001234",
   trato: "5",
   claridad: "4",
   facilidad: "3",
   satisfaccion: "4",
   aceptaPrivacidad: "on",
 };
+
+describe("folio del trámite", () => {
+  it("es obligatorio", () => {
+    const { folio: _omitido, ...sinFolio } = valido;
+    void _omitido;
+    const r = evaluacionSchema.safeParse(fd(sinFolio));
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues.some((i) => i.path[0] === "folio")).toBe(true);
+  });
+
+  it("se normaliza a mayúsculas y sin espacios en los extremos", () => {
+    const r = evaluacionSchema.safeParse(fd({ ...valido, folio: "  dgodu-ac-1520/2026 " }));
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.folio).toBe("DGODU-AC-1520/2026");
+  });
+
+  it("acepta formatos variados de las dependencias", () => {
+    for (const folio of ["DCM-P302-F03-LDT", "DGODU-AC", "12345", "TES.2026.88", "A1B2"]) {
+      expect(evaluacionSchema.safeParse(fd({ ...valido, folio })).success, folio).toBe(true);
+    }
+  });
+
+  it("rechaza folios cortos, largos, con espacios o símbolos", () => {
+    for (const folio of ["", "AB1", "A".repeat(41), "HMO 2026 1", "-HMO-1", "HMO-1-", "FOLIO#12", "<script>"]) {
+      expect(evaluacionSchema.safeParse(fd({ ...valido, folio })).success, folio).toBe(false);
+    }
+  });
+});
 
 describe("evaluacionSchema", () => {
   it("acepta una evaluación mínima válida", () => {
