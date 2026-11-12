@@ -53,7 +53,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         <div className="rejilla pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
         <div className="relative flex flex-col gap-1">
           <Link href="/panel" className="rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50" aria-label="Tablero del panel">
-            <Logotipo claro tono="turquesa" subtitulo="Panel institucional" />
+            <Logotipo claro subtitulo="Panel institucional" />
           </Link>
         </div>
         <div className="relative mt-8 flex-1">
@@ -84,7 +84,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       {/* Barra superior (móvil) */}
       <header className="bg-[linear-gradient(180deg,#041f24,#06363b)] px-4 pb-3 pt-4 lg:hidden">
         <div className="flex items-center justify-between gap-3">
-          <Logotipo claro tono="turquesa" subtitulo="Panel institucional" />
+          <Logotipo claro subtitulo="Panel institucional" />
           <form action={salir}>
             <button type="submit" className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-white">
               <LogOut className="size-3.5" aria-hidden="true" /> Salir

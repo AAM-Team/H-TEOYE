@@ -30,8 +30,9 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
-  // La compilación de producción no interfiere con el servidor de desarrollo.
-  distDir: process.env.NODE_ENV === "production" ? ".next-production" : ".next",
+  // La compilación de producción local no interfiere con el servidor de desarrollo.
+  // En Vercel debe ser ".next": la plataforma busca ahí la salida de la compilación.
+  distDir: process.env.NODE_ENV === "production" && !process.env.VERCEL ? ".next-production" : ".next",
   allowedDevOrigins: ["172.20.10.11"],
   cacheComponents: false,
   poweredByHeader: false,
