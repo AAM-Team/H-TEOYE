@@ -6,6 +6,7 @@ import { EncabezadoTablero } from "@/components/resultados/encabezado-tablero";
 import { BarrasFrecuencia, Distribucion, LeyendaEscala, Panel } from "@/components/resultados/graficas";
 import { RankingDependencias } from "@/components/resultados/ranking";
 import { Tendencia } from "@/components/resultados/tendencia";
+import { PanelDatosAbiertos } from "@/components/resultados/panel-datos-abiertos";
 import { MIN_MUESTRA, obtenerDetalle, resumenPorDependencia } from "@/lib/consultas/resultados";
 import { formatearEntero } from "@/lib/utils";
 
@@ -88,6 +89,8 @@ export default async function ResultadosPage() {
             </Button>
           </section>
         </div>
+
+        <PanelDatosAbiertos />
       </div>
     </>
   );

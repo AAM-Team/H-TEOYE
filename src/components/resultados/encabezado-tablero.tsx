@@ -81,11 +81,13 @@ export function EncabezadoTablero({
             <h1 className="text-4xl font-semibold leading-[1.02] sm:text-5xl">{titulo}</h1>
             <p className="mt-3 text-white/65">{descripcion}</p>
           </div>
-          {detalle.totalDemo > 0 && (
-            <Badge variant="demo" className="border-primary/40 bg-orange/10 text-orange">
-              {todoDemo ? "Datos demostrativos" : `Incluye ${formatearEntero(detalle.totalDemo)} demostrativas`}
-            </Badge>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            {detalle.totalDemo > 0 && (
+              <Badge variant="demo" className="border-primary/40 bg-orange/10 text-orange">
+                {todoDemo ? "Datos demostrativos" : `Incluye ${formatearEntero(detalle.totalDemo)} demostrativas`}
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Filtro: una fila, arriba de todas las gráficas */}

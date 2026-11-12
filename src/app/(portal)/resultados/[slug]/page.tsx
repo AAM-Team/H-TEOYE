@@ -7,6 +7,7 @@ import { EncabezadoTablero } from "@/components/resultados/encabezado-tablero";
 import { BarrasFrecuencia, Distribucion, LeyendaEscala, Panel } from "@/components/resultados/graficas";
 import { RankingDependencias } from "@/components/resultados/ranking";
 import { Tendencia } from "@/components/resultados/tendencia";
+import { PanelDatosAbiertos } from "@/components/resultados/panel-datos-abiertos";
 import {
   MIN_MUESTRA,
   obtenerDependenciaPorSlug,
@@ -91,6 +92,8 @@ export default async function ResultadosDependenciaPage({ params }: PageProps<"/
             </Link>
           </Button>
         </section>
+
+        <PanelDatosAbiertos dependenciaSlug={dep.slug} dependenciaNombre={dep.nombreCorto} />
       </div>
     </>
   );
