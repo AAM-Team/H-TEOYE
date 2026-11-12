@@ -14,7 +14,7 @@ type DependenciaDemo = {
 };
 
 type Calificaciones = Record<ClaveDimension, number | null>;
-const SIN_CALIFICAR: Calificaciones = { trato: null, claridad: null, facilidad: null, satisfaccion: null };
+const SIN_CALIFICAR: Calificaciones = { trato: null, claridad: null, facilidad: null, rapidez: null, satisfaccion: null };
 
 /** Fila compacta de 5 estrellas: un grupo de radios nativos (flechas del teclado, lectores de pantalla). */
 function FilaEstrellas({
@@ -116,7 +116,7 @@ export function EncuestaDemo({ dependencias }: { dependencias: DependenciaDemo[]
           Prueba la encuesta · no se guarda
         </span>
         <span className="tabular text-xs font-semibold text-white/70" aria-live="polite">
-          {paso === "calificar" ? `${completas} de 4` : "Resultado"}
+          {paso === "calificar" ? `${completas} de ${DIMENSIONES.length}` : "Resultado"}
         </span>
       </div>
       <div className="h-1 bg-white/10" aria-hidden="true">

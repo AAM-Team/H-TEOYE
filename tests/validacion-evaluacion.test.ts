@@ -13,7 +13,9 @@ const valido = {
   trato: "5",
   claridad: "4",
   facilidad: "3",
+  rapidez: "2",
   satisfaccion: "4",
+  canal: "PRESENCIAL",
   aceptaPrivacidad: "on",
 };
 
@@ -95,5 +97,47 @@ describe("evaluacionSchema", () => {
   it("limita el comentario a 500 caracteres y descarta comentarios vacíos", () => {
     expect(evaluacionSchema.safeParse(fd({ ...valido, comentario: "a".repeat(501) })).success).toBe(false);
     expect(evaluacionSchema.parse(fd({ ...valido, comentario: "   " })).comentario).toBeUndefined();
+  });
+});
+
+describe("encuesta por modalidad", () => {
+  it("exige la rapidez del trámite", () => {
+    const { rapidez: _r, ...sinRapidez } = valido;
+    void _r;
+    const r = evaluacionSchema.safeParse(fd(sinRapidez));
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues.some((i) => i.path[0] === "rapidez")).toBe(true);
+    expect(evaluacionSchema.parse(fd(valido)).rapidez).toBe(2);
+  });
+
+  it("exige elegir si el trámite fue presencial, en línea o por teléfono", () => {
+    const { canal: _c, ...sinCanal } = valido;
+    void _c;
+    const r = evaluacionSchema.safeParse(fd(sinCanal));
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues.some((i) => i.path[0] === "canal")).toBe(true);
+    expect(evaluacionSchema.safeParse(fd({ ...valido, canal: "CORREO" })).success).toBe(false);
+  });
+
+  it("sólo acepta problemas de la modalidad elegida", () => {
+    expect(evaluacionSchema.safeParse(fd({ ...valido, canal: "EN_LINEA", problemas: ["PLATAFORMA_FALLA"] })).success).toBe(true);
+    expect(evaluacionSchema.safeParse(fd({ ...valido, canal: "TELEFONICO", problemas: ["NO_CONTESTARON"] })).success).toBe(true);
+    // «Filas largas» es presencial: no aplica a un trámite en línea.
+    const r = evaluacionSchema.safeParse(fd({ ...valido, canal: "EN_LINEA", problemas: ["FILAS_LARGAS"] }));
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues.some((i) => i.path[0] === "problemas")).toBe(true);
+  });
+
+  it("«Otro» exige una descripción", () => {
+    const sin = evaluacionSchema.safeParse(fd({ ...valido, problemas: ["OTRO"] }));
+    expect(sin.success).toBe(false);
+    if (!sin.success) expect(sin.error.issues.some((i) => i.path[0] === "problemaOtro")).toBe(true);
+    const con = evaluacionSchema.parse(fd({ ...valido, problemas: ["OTRO"], problemaOtro: "  No había dónde sentarse  " }));
+    expect(con.problemaOtro).toBe("No había dónde sentarse");
+  });
+
+  it("descarta la descripción si no se marcó «Otro» y limita su largo", () => {
+    expect(evaluacionSchema.parse(fd({ ...valido, problemaOtro: "texto suelto" })).problemaOtro).toBeUndefined();
+    expect(evaluacionSchema.safeParse(fd({ ...valido, problemas: ["OTRO"], problemaOtro: "a".repeat(151) })).success).toBe(false);
   });
 });

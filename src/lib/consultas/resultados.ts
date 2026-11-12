@@ -28,7 +28,7 @@ export type ResumenDependencia = {
   satisfechos: number | null;
 };
 
-const vacio = (): Promedios => ({ trato: null, claridad: null, facilidad: null, satisfaccion: null });
+const vacio = (): Promedios => ({ trato: null, claridad: null, facilidad: null, rapidez: null, satisfaccion: null });
 
 function satisfechosDe(d: Distribucion) {
   const total = d.reduce((a, b) => a + b, 0);
@@ -46,7 +46,7 @@ export async function resumenPorDependencia(): Promise<ResumenDependencia[]> {
     prisma.evaluacion.groupBy({
       by: ["dependenciaId"],
       _count: { _all: true },
-      _avg: { trato: true, claridad: true, facilidad: true, satisfaccion: true },
+      _avg: { trato: true, claridad: true, facilidad: true, rapidez: true, satisfaccion: true },
     }),
     prisma.evaluacion.groupBy({ by: ["dependenciaId", "satisfaccion"], _count: { _all: true } }),
   ]);
@@ -108,7 +108,7 @@ export async function obtenerDetalle(dependenciaId?: string): Promise<Detalle> {
     prisma.evaluacion.aggregate({
       where,
       _count: { _all: true },
-      _avg: { trato: true, claridad: true, facilidad: true, satisfaccion: true },
+      _avg: { trato: true, claridad: true, facilidad: true, rapidez: true, satisfaccion: true },
     }),
     prisma.evaluacion.count({ where: { ...where, esDemo: true } }),
     prisma.evaluacion.groupBy({ by: ["satisfaccion"], where, _count: { _all: true } }),
@@ -155,7 +155,10 @@ export async function obtenerDetalle(dependenciaId?: string): Promise<Detalle> {
   const listaProblemas = PROBLEMAS.map((p) => {
     const n = conteoProblemas.get(p.valor) ?? 0;
     return { clave: p.valor, etiqueta: p.etiqueta, total: n, proporcion: respondieronProblemas ? n / respondieronProblemas : 0 };
-  }).sort((a, b) => b.total - a.total);
+  })
+    // El catálogo incluye problemas presenciales, en línea y por teléfono: sólo se listan los que alguien marcó.
+    .filter((p) => p.total > 0)
+    .sort((a, b) => b.total - a.total);
 
   const si = pago.find((p) => p.pagoIndebido === true)?._count._all ?? 0;
   const no = pago.find((p) => p.pagoIndebido === false)?._count._all ?? 0;
@@ -201,7 +204,7 @@ export async function resumenPorTramite(dependenciaId: string): Promise<ResumenT
       by: ["tramiteId"],
       where: { dependenciaId },
       _count: { _all: true },
-      _avg: { trato: true, claridad: true, facilidad: true, satisfaccion: true },
+      _avg: { trato: true, claridad: true, facilidad: true, rapidez: true, satisfaccion: true },
     }),
   ]);
   const porId = new Map(promedios.map((p) => [p.tramiteId, p]));

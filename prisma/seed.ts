@@ -15,6 +15,7 @@ import { PrismaClient, Canal, EstadoAccion, EstadoComentario, Problema, Rol } fr
 import { PrismaPg } from "@prisma/adapter-pg";
 import { DEPENDENCIAS } from "./catalogo/dependencias";
 import { importarCatalogo } from "./catalogo/importar";
+import { PROBLEMAS_POR_CANAL } from "../src/lib/constantes";
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
@@ -40,20 +41,13 @@ const COMENTARIOS_DEMO = [
   "Comentario de demostración: tuve que regresar dos veces por falta de información.",
 ];
 
-const PROBLEMAS_DEMO = [
-  Problema.FILAS_LARGAS,
-  Problema.REQUISITOS_NO_VISIBLES,
-  Problema.HORARIO_RESTRINGIDO,
-  Problema.REQUISITOS_EXCESIVOS,
-  Problema.VENTANILLA_EN_VENTANILLA,
-  Problema.COSTOS_EXCESIVOS,
-];
-
-function elegirProblemas(azar: () => number, base: number): Problema[] {
+/** Problemas de demostración según la modalidad, igual que en la encuesta (sin «Otro»). */
+function elegirProblemas(azar: () => number, base: number, canal: Canal): Problema[] {
   const r = azar();
   if (r < 0.2) return []; // sin respuesta
   if (r < 0.2 + Math.max(0.1, (base - 2.5) * 0.25)) return [Problema.NINGUNO];
-  return PROBLEMAS_DEMO.filter(() => azar() < 0.28).slice(0, 3);
+  const opciones = PROBLEMAS_POR_CANAL[canal].map((p) => p.valor).filter((v) => v !== "OTRO") as Problema[];
+  return opciones.filter(() => azar() < 0.28).slice(0, 3);
 }
 
 /** Cuentas de demostración del panel institucional (dominio .example: no son correos reales). */
@@ -185,6 +179,7 @@ async function main() {
         Math.min(5, Math.max(1, Math.round(base + ajuste + (azar() - 0.5) * 2.4)));
       for (let k = 0; k < n; k++) {
         const conComentario = azar() < 0.28;
+        const canal = canales[Math.floor(azar() * canales.length)];
         filas.push({
           tramiteId: t.id,
           dependenciaId: t.dependenciaId,
@@ -193,9 +188,10 @@ async function main() {
           trato: estrella(0.3),
           claridad: estrella(-0.2),
           facilidad: estrella(-0.4),
+          rapidez: estrella(-0.5),
           satisfaccion: estrella(),
-          canal: azar() < 0.15 ? null : canales[Math.floor(azar() * canales.length)],
-          problemas: elegirProblemas(azar, base),
+          canal,
+          problemas: elegirProblemas(azar, base, canal),
           pagoIndebido: azar() < 0.3 ? null : azar() < (t.dependencia.slug === "seguridad-publica-transito" ? 0.08 : 0.02),
           comentario: conComentario ? COMENTARIOS_DEMO[Math.floor(azar() * COMENTARIOS_DEMO.length)] : null,
           estadoComentario: conComentario

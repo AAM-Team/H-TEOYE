@@ -18,6 +18,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
     { href: "/panel/evaluaciones", etiqueta: "Evaluaciones" },
     { href: "/panel/comentarios", etiqueta: "Comentarios", contador: pendientes },
     { href: "/panel/acciones", etiqueta: "Acciones de mejora" },
+    { href: "/panel/qr", etiqueta: "Códigos QR" },
     ...(usuario.rol === "ADMINISTRADOR" ? [{ href: "/panel/bitacora", etiqueta: "Bitácora" }] : []),
   ];
   const iniciales = usuario.nombre
@@ -49,7 +50,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       </a>
 
       {/* Barra lateral (escritorio) */}
-      <aside className="relative hidden w-72 shrink-0 flex-col overflow-hidden bg-[linear-gradient(180deg,#041f24,#06363b)] p-5 lg:sticky lg:top-0 lg:flex lg:h-dvh">
+      <aside className="relative hidden w-72 print:!hidden shrink-0 flex-col overflow-hidden bg-[linear-gradient(180deg,#041f24,#06363b)] p-5 lg:sticky lg:top-0 lg:flex lg:h-dvh">
         <div className="rejilla pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" />
         <div className="relative flex flex-col gap-1">
           <Link href="/panel" className="rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50" aria-label="Tablero del panel">
@@ -82,7 +83,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
       </aside>
 
       {/* Barra superior (móvil) */}
-      <header className="bg-[linear-gradient(180deg,#041f24,#06363b)] px-4 pb-3 pt-4 lg:hidden">
+      <header className="bg-[linear-gradient(180deg,#041f24,#06363b)] px-4 pb-3 pt-4 lg:hidden print:hidden">
         <div className="flex items-center justify-between gap-3">
           <Logotipo claro subtitulo="Panel institucional" />
           <form action={salir}>
@@ -96,7 +97,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
         </div>
       </header>
 
-      <main id="contenido-panel" className="min-w-0 flex-1 bg-background">
+      <main id="contenido-panel" className="min-w-0 flex-1 bg-background print:bg-white">
         {children}
       </main>
     </div>
