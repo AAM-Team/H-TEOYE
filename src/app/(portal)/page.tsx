@@ -18,8 +18,8 @@ const PASOS = [
     texto: "Cinco dependencias y 25 trámites del catálogo oficial. Sin cuenta, sin registro.",
   },
   {
-    titulo: "Califica cuatro aspectos",
-    texto: "Trato, claridad, facilidad y satisfacción, de una a cinco estrellas. Lo demás es opcional.",
+    titulo: "Califica cinco aspectos",
+    texto: "Trato, claridad, facilidad, rapidez y satisfacción, con preguntas según si lo hiciste en persona, en línea o por teléfono.",
   },
   {
     titulo: "Mira el resultado público",
@@ -54,7 +54,7 @@ export default async function InicioPage() {
               Califica tu trámite municipal en <span className="text-orange">2 minutos</span>.
             </h1>
             <p style={retraso(140)} className="entrada mt-6 max-w-xl text-lg leading-relaxed text-white/70">
-              El folio de tu trámite, cuatro preguntas y cinco estrellas. Cada respuesta alimenta un tablero
+              El folio de tu trámite, cinco preguntas y cinco estrellas. Cada respuesta alimenta un tablero
               público que compara a las cinco dependencias participantes.
             </p>
             <div style={retraso(210)} className="entrada mt-8 flex flex-col gap-3 sm:flex-row">

@@ -165,7 +165,7 @@ export default async function EvaluacionesPanel({ searchParams }: PageProps<"/pa
               <ul className="mt-3 flex flex-wrap gap-1.5">
                 {e.problemas.map((p) => (
                   <li key={p} className="rounded-full border px-2.5 py-0.5 text-xs text-navy">
-                    {PROBLEMA.get(p) ?? p}
+                    {p === "OTRO" && e.problemaOtro ? `Otro: ${e.problemaOtro}` : (PROBLEMA.get(p) ?? p)}
                   </li>
                 ))}
               </ul>

@@ -13,9 +13,11 @@ import {
   CANALES,
   DIMENSIONES,
   MAX_COMENTARIO,
+  MAX_PROBLEMA_OTRO,
   OPCIONES_PAGO_INDEBIDO,
   PROBLEMA_NINGUNO,
-  PROBLEMAS,
+  PROBLEMAS_POR_CANAL,
+  type ClaveCanal,
   type ClaveDimension,
 } from "@/lib/constantes";
 import { colorCalificacion, veredicto } from "@/lib/escala";
@@ -26,8 +28,10 @@ const estadoInicial: EstadoEnvio = { estado: "inicial" };
 /** Destino y nombre de cada campo, para enlazar el resumen de errores con el campo a corregir. */
 const CAMPOS: Record<string, { ancla: string; nombre: string }> = {
   folio: { ancla: "folio", nombre: "Folio del trámite" },
+  canal: { ancla: "campo-canal", nombre: "Cómo realizaste el trámite" },
   ...Object.fromEntries(DIMENSIONES.map((d) => [d.clave, { ancla: `campo-${d.clave}`, nombre: d.titulo }])),
   problemas: { ancla: "campo-problemas", nombre: "Problemas que enfrentaste" },
+  problemaOtro: { ancla: "problema-otro", nombre: "Descripción del otro problema" },
   comentario: { ancla: "comentario", nombre: "Comentario" },
   aceptaPrivacidad: { ancla: "acepta-privacidad", nombre: "Aviso de privacidad" },
 };
@@ -97,16 +101,17 @@ function Seccion({
   );
 }
 
-export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
+/** Modalidad oficial del trámite → modalidad sugerida en la encuesta (la persona puede cambiarla). */
+const CANAL_SUGERIDO: Record<string, ClaveCanal> = { VENTANILLA: "PRESENCIAL", EN_LINEA: "EN_LINEA" };
+
+export function FormularioEncuesta({ tramiteId, modalidad }: { tramiteId: string; modalidad?: string | null }) {
   const [estado, accion, enviando] = useActionState(enviarEvaluacion, estadoInicial);
-  const [calificaciones, setCalificaciones] = useState<Record<ClaveDimension, number | null>>({
-    trato: null,
-    claridad: null,
-    facilidad: null,
-    satisfaccion: null,
-  });
-  const [canal, setCanal] = useState<string>("");
+  const [calificaciones, setCalificaciones] = useState<Record<ClaveDimension, number | null>>(
+    () => Object.fromEntries(DIMENSIONES.map((d) => [d.clave, null])) as Record<ClaveDimension, number | null>,
+  );
+  const [canal, setCanalElegido] = useState<ClaveCanal | "">((modalidad && CANAL_SUGERIDO[modalidad]) || "");
   const [problemas, setProblemas] = useState<string[]>([]);
+  const [problemaOtro, setProblemaOtro] = useState("");
   const [pago, setPago] = useState<string>("");
   const [comentario, setComentario] = useState("");
   const [acepta, setAcepta] = useState(false);
@@ -123,8 +128,19 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
   const valores = Object.values(calificaciones).filter((v): v is number => v != null);
   const completas = valores.length;
   const tuPromedio = completas ? valores.reduce((a, b) => a + b, 0) / completas : null;
-  const opcionales = [canal, problemas.length ? "x" : "", pago, comentario.trim()].filter(Boolean).length;
-  const listo = folioListo && completas === 4 && acepta;
+  const opcionales = [problemas.length ? "x" : "", pago, comentario.trim()].filter(Boolean).length;
+  const listo = folioListo && canal !== "" && completas === DIMENSIONES.length && acepta;
+  const problemasDelCanal = canal ? PROBLEMAS_POR_CANAL[canal] : [];
+  const marcoOtro = problemas.includes("OTRO");
+  const errorCanal = canal ? undefined : errores.canal?.[0];
+  const errorOtro = errores.problemaOtro && problemaOtro.trim().length < 3 ? errores.problemaOtro[0] : undefined;
+
+  /** Al cambiar de modalidad se quitan los problemas que no aplican a la nueva. */
+  function setCanal(nuevo: ClaveCanal) {
+    setCanalElegido(nuevo);
+    const validos = new Set<string>([PROBLEMA_NINGUNO.valor, ...PROBLEMAS_POR_CANAL[nuevo].map((p) => p.valor)]);
+    setProblemas((actual) => actual.filter((p) => validos.has(p)));
+  }
 
   useEffect(() => {
     if (estado.estado === "error") resumenRef.current?.focus();
@@ -147,8 +163,13 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
 
   const pasos = [
     { ancla: "folio", titulo: "Folio del trámite", hecho: folioListo },
-    ...DIMENSIONES.map((d) => ({ ancla: `campo-${d.clave}`, titulo: d.titulo, hecho: calificaciones[d.clave] != null })),
-    { ancla: "titulo-adicional", titulo: `Detalles opcionales (${opcionales} de 4)`, hecho: opcionales > 0, opcional: true },
+    { ancla: "campo-canal", titulo: "Cómo realizaste el trámite", hecho: canal !== "" },
+    ...DIMENSIONES.map((d) => ({
+      ancla: `campo-${d.clave}`,
+      titulo: (canal && d.titulos?.[canal]) || d.titulo,
+      hecho: calificaciones[d.clave] != null,
+    })),
+    { ancla: "titulo-adicional", titulo: `Detalles opcionales (${opcionales} de 3)`, hecho: opcionales > 0, opcional: true },
     { ancla: "acepta-privacidad", titulo: "Aviso de privacidad", hecho: acepta },
   ];
   const color = colorCalificacion(tuPromedio);
@@ -242,6 +263,36 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
         </Seccion>
 
         <Seccion
+          id="titulo-canal"
+          numero="Obligatorio"
+          titulo={
+            <>
+              ¿Cómo realizaste el trámite? <span className="sr-only">(obligatorio)</span>
+            </>
+          }
+          descripcion="Así te hacemos las preguntas que corresponden a tu experiencia."
+        >
+          <fieldset id="campo-canal" aria-describedby={errorCanal ? "error-canal" : undefined}>
+            <legend className="sr-only">Modalidad del trámite</legend>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {CANALES.map((c) => (
+                <Opcion key={c.valor} type="radio" name="canal" value={c.valor} checked={canal === c.valor} onChange={() => setCanal(c.valor)}>
+                  <span className="flex flex-col">
+                    {c.etiqueta}
+                    <span className="text-xs font-normal text-muted-foreground">{c.detalle}</span>
+                  </span>
+                </Opcion>
+              ))}
+            </div>
+            {errorCanal && (
+              <p id="error-canal" className="mt-2 text-sm font-medium text-destructive">
+                {errorCanal}
+              </p>
+            )}
+          </fieldset>
+        </Seccion>
+
+        <Seccion
           id="titulo-calificaciones"
           numero="Obligatorio"
           titulo={
@@ -249,7 +300,11 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
               Califica tu experiencia <span className="sr-only">(obligatorio)</span>
             </>
           }
-          descripcion="Una estrella es muy malo; cinco es excelente."
+          descripcion={
+            canal
+              ? "Una estrella es muy malo; cinco es excelente."
+              : "Una estrella es muy malo; cinco es excelente. Elige arriba cómo hiciste el trámite para ver las preguntas que te corresponden."
+          }
         >
           <div className="space-y-3">
             {DIMENSIONES.map((d, i) => (
@@ -257,8 +312,8 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
                 key={d.clave}
                 numero={i + 1}
                 nombre={d.clave}
-                titulo={d.titulo}
-                pregunta={d.pregunta}
+                titulo={(canal && d.titulos?.[canal]) || d.titulo}
+                pregunta={canal ? d.preguntas[canal] : d.pregunta}
                 valor={calificaciones[d.clave]}
                 onCambio={(v) => setCalificaciones((c) => ({ ...c, [d.clave]: v }))}
                 error={calificaciones[d.clave] ? undefined : errores[d.clave]?.[0]}
@@ -269,22 +324,13 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
 
         <Seccion id="titulo-adicional" numero="Opcional" titulo="Cuéntanos un poco más" descripcion="Cada respuesta ayuda a ubicar qué mejorar.">
           <div className="space-y-8">
-            <fieldset>
-              <legend className="font-semibold text-navy">¿Cómo realizaste el trámite?</legend>
-              <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                {CANALES.map((c) => (
-                  <Opcion key={c.valor} type="radio" name="canal" value={c.valor} checked={canal === c.valor} onChange={() => setCanal(c.valor)}>
-                    {c.etiqueta}
-                  </Opcion>
-                ))}
-              </div>
-            </fieldset>
-
             <fieldset id="campo-problemas" aria-describedby={errores.problemas ? "error-problemas" : undefined}>
               <legend className="font-semibold text-navy">¿Enfrentaste alguno de estos problemas?</legend>
-              <p className="mt-1 text-sm text-muted-foreground">Puedes marcar varios.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {canal ? "Puedes marcar varios." : "Elige primero cómo realizaste el trámite para ver los problemas que aplican."}
+              </p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {PROBLEMAS.map((p) => (
+                {problemasDelCanal.map((p) => (
                   <Opcion
                     key={p.valor}
                     type="checkbox"
@@ -306,6 +352,34 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
                   {PROBLEMA_NINGUNO.etiqueta}
                 </Opcion>
               </div>
+              {marcoOtro && (
+                <div className="mt-3">
+                  <label htmlFor="problema-otro" className="text-sm font-semibold text-navy">
+                    Describe el otro problema <span className="text-destructive" aria-hidden="true">*</span>
+                  </label>
+                  <Input
+                    id="problema-otro"
+                    name="problemaOtro"
+                    value={problemaOtro}
+                    onChange={(e) => setProblemaOtro(e.target.value)}
+                    maxLength={MAX_PROBLEMA_OTRO}
+                    autoComplete="off"
+                    placeholder="Ej. el sistema pedía un dato que no tenía"
+                    aria-required="true"
+                    aria-invalid={errorOtro ? true : undefined}
+                    aria-describedby="ayuda-problema-otro"
+                    className="mt-2 h-11 rounded-2xl bg-muted/40 px-4 focus-visible:bg-card"
+                  />
+                  <p id="ayuda-problema-otro" className="mt-1.5 flex justify-between gap-4 text-xs text-muted-foreground">
+                    <span className={errorOtro ? "font-medium text-destructive" : undefined}>
+                      {errorOtro ?? "Sin nombres ni datos personales."}
+                    </span>
+                    <span className="tabular">
+                      {problemaOtro.length} / {MAX_PROBLEMA_OTRO}
+                    </span>
+                  </p>
+                </div>
+              )}
               {errores.problemas && (
                 <p id="error-problemas" className="mt-2 text-sm font-medium text-destructive">
                   {errores.problemas[0]}
@@ -446,7 +520,7 @@ export function FormularioEncuesta({ tramiteId }: { tramiteId: string }) {
                 : listo
                   ? "Enviar evaluación"
                   : (() => {
-                      const faltan = 4 - completas + (acepta ? 0 : 1) + (folioListo ? 0 : 1);
+                      const faltan = DIMENSIONES.length - completas + (acepta ? 0 : 1) + (folioListo ? 0 : 1) + (canal ? 0 : 1);
                       return `${faltan === 1 ? "Falta 1 paso" : `Faltan ${faltan} pasos`}`;
                     })()}
             </Button>

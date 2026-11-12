@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { Prisma } from "@prisma/client";
+import { Prisma, type Problema } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { consumirCupoCompartido, ipDeEncabezados } from "@/lib/limite-compartido";
 import { evaluacionSchema, formDataAObjeto } from "@/lib/validaciones/evaluacion";
@@ -73,9 +73,12 @@ export async function enviarEvaluacion(_previo: EstadoEnvio, formData: FormData)
         trato: datos.trato,
         claridad: datos.claridad,
         facilidad: datos.facilidad,
+        rapidez: datos.rapidez,
         satisfaccion: datos.satisfaccion,
-        canal: datos.canal ?? null,
-        problemas: datos.problemas,
+        canal: datos.canal,
+        // Validados contra el catálogo en evaluacionSchema.
+        problemas: datos.problemas as Problema[],
+        problemaOtro: datos.problemaOtro ? redactarDatosPersonales(datos.problemaOtro).texto : null,
         pagoIndebido: datos.pagoIndebido ?? null,
         comentario: comentario?.texto ?? null,
         comentarioRedactado: comentario?.redactado ?? false,

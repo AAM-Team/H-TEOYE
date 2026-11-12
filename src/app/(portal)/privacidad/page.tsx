@@ -23,7 +23,7 @@ export default function PrivacidadPage() {
           <p>Al enviar una evaluación guardamos únicamente:</p>
           <ul>
             <li>La dependencia y el trámite evaluados.</li>
-            <li>Tus calificaciones de 1 a 5 en trato, claridad, facilidad y satisfacción general.</li>
+            <li>Cómo realizaste el trámite (presencial, en línea o por teléfono) y tus calificaciones de 1 a 5 en trato, claridad, facilidad, rapidez y satisfacción general.</li>
             <li>
               Si decides responderlas: el canal de atención, los problemas que enfrentaste y si alguien te pidió un
               pago no oficial.

@@ -37,7 +37,7 @@ export default async function DependenciasPage() {
             <EyeOff className="size-4 text-orange" aria-hidden="true" /> Sin nombre, CURP ni correo
           </span>
           <span className="flex items-center gap-2">
-            <Star className="size-4 text-orange" aria-hidden="true" /> 4 preguntas obligatorias
+            <Star className="size-4 text-orange" aria-hidden="true" /> 5 calificaciones obligatorias
           </span>
         </div>
       </EncabezadoPagina>

@@ -46,6 +46,14 @@ enum Problema {
   REQUISITOS_EXCESIVOS
   VENTANILLA_EN_VENTANILLA
   COSTOS_EXCESIVOS
+  // Trámites en línea y por teléfono
+  PLATAFORMA_FALLA
+  DIFICIL_ENCONTRAR
+  SIN_RESPUESTA
+  TUVO_QUE_IR_EN_PERSONA
+  NO_CONTESTARON
+  /// Otro problema; la descripción va en Evaluacion.problemaOtro
+  OTRO
 }
 
 enum EstadoComentario {
@@ -112,6 +120,7 @@ model Evaluacion {
   trato        Int
   claridad     Int
   facilidad    Int
+  rapidez      Int // Rapidez con que se atendió y resolvió el trámite
   satisfaccion Int // Satisfacción general
 
   canal Canal?
@@ -120,6 +129,8 @@ model Evaluacion {
   problemas Problema[]
   /// ¿Le pidieron o sugirieron un pago no oficial? null = prefirió no responder / sin respuesta.
   pagoIndebido Boolean?
+  /// Descripción del problema «Otro» (con datos personales removidos). Sólo se ve en el panel.
+  problemaOtro String?
 
   comentario         String?
   estadoComentario   EstadoComentario @default(SIN_COMENTARIO)

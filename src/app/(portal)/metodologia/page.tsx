@@ -13,6 +13,7 @@ import {
   UserRound,
   X,
   type LucideIcon,
+  Timer,
 } from "lucide-react";
 import { EncabezadoPagina } from "@/components/portal/encabezado-pagina";
 import { DIMENSIONES, PROBLEMAS, type ClaveDimension } from "@/lib/constantes";
@@ -38,6 +39,7 @@ const ICONO_DIMENSION: Record<ClaveDimension, LucideIcon> = {
   trato: UserRound,
   claridad: FileText,
   facilidad: Route,
+  rapidez: Timer,
   satisfaccion: Smile,
 };
 
@@ -136,7 +138,7 @@ export default function MetodologiaPage() {
         <div className="min-w-0 space-y-20">
           {/* Qué mide */}
           <section aria-labelledby="que-mide">
-            <Titulo id="que-mide" rotulo="Cuatro preguntas obligatorias">
+            <Titulo id="que-mide" rotulo="Cinco calificaciones obligatorias">
               Qué mide
             </Titulo>
             <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">

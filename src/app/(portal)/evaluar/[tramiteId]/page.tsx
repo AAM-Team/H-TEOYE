@@ -55,7 +55,7 @@ export default async function EvaluarPage({ params }: PageProps<"/evaluar/[trami
         </div>
       </EncabezadoPagina>
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-        <FormularioEncuesta tramiteId={tramite.id} />
+        <FormularioEncuesta tramiteId={tramite.id} modalidad={tramite.modalidad} />
       </div>
     </>
   );

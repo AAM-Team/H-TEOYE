@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardCheck, LayoutDashboard, ListChecks, MessageSquareText, ScrollText, type LucideIcon } from "lucide-react";
+import { ClipboardCheck, LayoutDashboard, ListChecks, MessageSquareText, QrCode, ScrollText, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ICONOS: Record<string, LucideIcon> = {
@@ -11,6 +11,7 @@ const ICONOS: Record<string, LucideIcon> = {
   "/panel/comentarios": MessageSquareText,
   "/panel/acciones": ClipboardCheck,
   "/panel/bitacora": ScrollText,
+  "/panel/qr": QrCode,
 };
 
 export type EnlacePanel = { href: string; etiqueta: string; contador?: number };
