@@ -1,16 +1,27 @@
-# Base de datos local para desarrollo: docker compose up -d
 services:
   db:
     image: postgres:16-alpine
     container_name: hteoye-db
-    restart: unless-stopped
+    restart: always
     environment:
-      POSTGRES_USER: hteoye
-      POSTGRES_PASSWORD: hteoye
-      POSTGRES_DB: hteoye
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-h_teoye}
     ports:
       - "5432:5432"
     volumes:
-      - hteoye-datos:/var/lib/postgresql/data
+      - h-teoye_hteoye-datos:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: h-teoye-app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-h_teoye}?schema=public
+    depends_on:
+      - db
+
 volumes:
-  hteoye-datos:
+  h-teoye_hteoye-datos:
